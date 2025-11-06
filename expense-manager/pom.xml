@@ -97,8 +97,6 @@
         </plugin>
       </plugins>
     </pluginManagement>
-
-    <!-- ✅ Plugin JavaFX ACTIVADO (ya no solo declarado) -->
     <plugins>
       <plugin>
         <groupId>org.openjfx</groupId>
