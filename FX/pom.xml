@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>umu.tds</groupId>
-  <artifactId>FX</artifactId>
+  <artifactId>expense-manager</artifactId>
   <version>0.1</version>
 
   <name>FX</name>
