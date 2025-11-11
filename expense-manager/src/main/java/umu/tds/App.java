@@ -17,7 +17,7 @@ public class App extends Application {
         Label etiqueta = new Label("Nombre:");
         TextField campoTexto = new TextField();
         Button botonAceptar = new Button("Aceptar");
-
+        //prueba
         // Contenedor horizontal para la etiqueta y el campo de texto
         HBox hbox = new HBox(10); 
         hbox.getChildren().addAll(etiqueta, campoTexto);
