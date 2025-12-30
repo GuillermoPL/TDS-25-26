@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CuentaCompartida {
+	
 	private Map<String, Double> saldosPorUsuario;
 	private EstrategiaReparto estrategia;
 	
