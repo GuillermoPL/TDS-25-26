@@ -32,7 +32,7 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 
 	private void cargaGastos() throws ErrorPersistenciaException {
 		try {
-			rutaFichero = Configuracion.getInstancia().getRutaFicheroGastos();
+			rutaFichero = Configuracion.getInstancia().getRutaGastos();
 			this.gastos = cargarGastos(rutaFichero);
 		} catch (Exception e) {
 			log.error("Error cargando los gastos ", e);
