@@ -1,5 +1,7 @@
 package umu.tds.modelo;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Usuario {
@@ -22,5 +24,17 @@ public class Usuario {
 	@Override
 	public String toString() {
 		return id;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Usuario other = (Usuario) obj;
+		return id.equals(other.id);
 	}
 }

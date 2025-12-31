@@ -115,7 +115,7 @@ public class Gasto {
     
     @Override
     public String toString() {
-        return "Gasto [id=" + id + ", importe=" + importe + ", desc=" + categoria + "]";
+        return "Gasto [id=" + id + ", importe=" + importe + ", categoría=" + categoria + "]";
     }
 	
 	

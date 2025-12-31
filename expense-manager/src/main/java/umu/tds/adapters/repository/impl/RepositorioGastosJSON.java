@@ -74,13 +74,6 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 		return gastos;
 	}
 
-	/*
-	@Override
-	public List<Gasto> getGastos(Predicate<Gasto> condicion) {
-		List<Gasto> gastos = getGastos();
-		return gastos.stream().filter(condicion).collect(Collectors.toList());
-	}
-	*/
 
 	@Override
 	public void addGasto(Gasto gasto) throws ElementoExistenteException, ErrorPersistenciaException{
