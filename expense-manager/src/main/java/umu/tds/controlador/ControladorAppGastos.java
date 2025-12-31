@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import umu.tds.Configuracion;
 import umu.tds.adapters.repository.RepositorioGastos;
-import umu.tds.adapters.repository.impl.RepositorioGastosJSON;
 import umu.tds.modelo.Gasto;
 
 //importacion de las clases del paquete modelo. asi como de utilidades java.
@@ -15,10 +15,11 @@ import umu.tds.modelo.Gasto;
 //PATRON SINGLETON
 public class ControladorAppGastos {
 	private static ControladorAppGastos unicaInstancia;
-	private RepositorioGastos repositorio;
-	
-	private ControladorAppGastos() {
-		repositorio = new RepositorioGastosJSON();
+    private RepositorioGastos repositorio;
+    
+    // Constructor privado
+    private ControladorAppGastos() {
+        this.repositorio = Configuracion.getInstancia().getRepositorioGastos();
     }
 	
 	public static ControladorAppGastos getInstancia() {
