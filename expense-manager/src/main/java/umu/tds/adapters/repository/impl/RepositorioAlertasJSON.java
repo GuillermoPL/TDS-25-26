@@ -7,7 +7,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,30 +18,29 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import umu.tds.Configuracion;
+import umu.tds.adapters.repository.RepositorioAlertas;
 import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
 import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
-import umu.tds.adapters.repository.RepositorioGastos;
-import umu.tds.modelo.Categoria;
-import umu.tds.modelo.Gasto;
+import umu.tds.modelo.Alerta;
 
-public class RepositorioGastosJSON implements RepositorioGastos {
+public class RepositorioAlertasJSON implements RepositorioAlertas{
 
 	private static final Logger log = LogManager.getLogger();
 
-	private List<Gasto> gastos = null;
+	private List<Alerta> alertas = null;
 	private String rutaFichero;
 
-	private void cargaGastos() throws ErrorPersistenciaException {
+	private void cargaAlertas() throws ErrorPersistenciaException {
 		try {
-			rutaFichero = Configuracion.getInstancia().getRutaGastos();
-			this.gastos = cargarGastos(rutaFichero);
+			rutaFichero = Configuracion.getInstancia().getRutaAlertas();
+			this.alertas = cargarAlertas(rutaFichero);
 		} catch (Exception e) {
-			log.error("Error cargando los gastos ", e);
+			log.error("Error cargando las alertas ", e);
 			throw new ErrorPersistenciaException(e);
 		}
 	}
 
-	private List<Gasto> cargarGastos(String rutaFichero)
+	private List<Alerta> cargarAlertas(String rutaFichero)
 			throws StreamReadException, DatabindException, IOException {
 
 		// Intentamos abrir el fichero como recurso
@@ -50,53 +48,45 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 
 		// Usamos Jackson para leer
 		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
 
-		// Leemos el JSON y lo convertimos directamente a una Lista de Gastos
-		List<Gasto> gastosCargados = mapper.readValue(ficheroStream, new TypeReference<List<Gasto>>() {
+		// Leemos el JSON y lo convertimos directamente a una Lista de Alertas
+		List<Alerta> alertasCargadas = mapper.readValue(ficheroStream, new TypeReference<List<Alerta>>() {
 		});
 
-		return gastosCargados;
+		return alertasCargadas;
 
 	}
 
 	@Override
-	public List<Gasto> getGastos() {
-		if (gastos == null) {
+	public List<Alerta> getAlertas() {
+		if (alertas == null) {
 			try {
-				cargaGastos();
+				cargaAlertas();
 			} catch (ErrorPersistenciaException e) {
 				// Manejo la excepcion y la propago como Excepcion en Tiempo de Ejecución.
-				log.error("No se han podido cargar los gastos ", e);
+				log.error("No se han podido cargar las alertas ", e);
 				throw new RuntimeException(
-						"CRITICAL_LOAD_ERROR: No se pudo cargar el fichero de gastos.", e);
+						"CRITICAL_LOAD_ERROR: No se pudo cargar el fichero de alertas.", e);
 			}
 		}
-		return gastos;
-	}
-	
-	@Override
-	public List<Gasto> getGastosPorCategoria(Categoria categoria){
-		return getGastos().stream()
-							.filter(g -> g.isCategoria(categoria))
-							.collect(Collectors.toList());
+		return alertas;
 	}
 
 
 	@Override
-	public void addGasto(Gasto gasto) throws ElementoExistenteException, ErrorPersistenciaException{
+	public void addAlerta(Alerta alerta) throws ElementoExistenteException, ErrorPersistenciaException{
 		// Si el producto ya existe no puedo insertarlo
-		if (gastos.contains(gasto)) {
-			// TODO: Describir mejor el error de que ya esté el gasto registrado
-			throw new ElementoExistenteException("El gasto ya ha sido registrado");
+		if (alertas.contains(alerta)) {
+			// TODO: Describir mejor el error de que ya esté la alerta registrada
+			throw new ElementoExistenteException("La alerta ya ha sido registrada");
 		}
-		gastos.add(gasto);
+		alertas.add(alerta);
 		try {
-			guardarGastos(gastos, rutaFichero);
+			guardarAlertas(alertas, rutaFichero);
 		} catch (Exception e) {
-			// Hacemos rollback ya que asumimos que no se ha podido guardar el gasto
-			gastos.remove(gasto);
-			log.error("Error persistiendo el gasto {}", gasto, e);
+			// Hacemos rollback ya que asumimos que no se ha podido guardar la alerta
+			alertas.remove(alerta);
+			log.error("Error persistiendo la alerta {}", alerta, e);
 			// Capturo las excepciones genericas lanzadas al persistir y lanzo una propia
 			// encapsulando la excepcion real
 			throw new ErrorPersistenciaException(e);
@@ -105,37 +95,37 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 	}
 
 	@Override
-	public void removeGasto(Gasto gasto) throws ErrorPersistenciaException{
-		if (!gastos.contains(gasto)) {
+	public void removeAlerta(Alerta alerta) throws ErrorPersistenciaException{
+		if (!alertas.contains(alerta)) {
 			return;
 		}
 
-		gastos.remove(gasto);
+		alertas.remove(alerta);
 		try {
-			guardarGastos(gastos, rutaFichero);
+			guardarAlertas(alertas, rutaFichero);
 		} catch (Exception e) {
-			// Hacemos rollback ya que asumimos que no se ha podido eliminar el gasto
-			gastos.add(gasto);
-			log.error("Error eliminando el gasto {}", gasto, e);
+			// Hacemos rollback ya que asumimos que no se ha podido eliminar la alerta
+			alertas.add(alerta);
+			log.error("Error eliminando la alerta {}", alerta, e);
 			throw new ErrorPersistenciaException(e);
 		}
 
 	}
 
 	@Override
-	public void updateGasto(Gasto gasto) throws ErrorPersistenciaException {
+	public void updateAlerta(Alerta alerta) throws ErrorPersistenciaException {
 		// La modificación la hacemos en el controladorGastos
 		try {
-			guardarGastos(gastos, rutaFichero);
+			guardarAlertas(alertas, rutaFichero);
 		} catch (Exception e) {
-			log.error("Error actualizando el gasto {}", gasto, e);
+			log.error("Error actualizando la alerta {}", alerta, e);
 			throw new ErrorPersistenciaException(e);
 		}
 
 	}
 	
 	// Metodo para guardar por completo en el fichero json
-	private void guardarGastos(List<Gasto> gastos, String rutaFichero)
+	private void guardarAlertas(List<Alerta> alertas, String rutaFichero)
 			throws Exception {
 
 		// Se carga mediante URL para prevenir problemas con rutas con espacios en
@@ -155,11 +145,11 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 	        ObjectMapper mapper = new ObjectMapper();
 	        mapper.registerModule(new JavaTimeModule());
 	        
-	        mapper.writerWithDefaultPrettyPrinter().writeValue(ficheroJSon, gastos);
+	        mapper.writerWithDefaultPrettyPrinter().writeValue(ficheroJSon, alertas);
 	        
-	        this.gastos = gastos;
+	        this.alertas = alertas;
 	        
-	        log.info("Gastos guardados correctamente en: " + ficheroJSon.getAbsolutePath());
+	        log.info("Alertas guardadas correctamente en: " + ficheroJSon.getAbsolutePath());
 			
 		} catch (IOException | URISyntaxException e) {
 			log.error("Error persistiendo en fichero", e);

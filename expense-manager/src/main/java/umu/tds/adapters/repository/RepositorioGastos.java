@@ -11,11 +11,13 @@ public interface RepositorioGastos {
 	
 	public List<Gasto> getGastos();
 	
-	//public List<Gasto> getGastos(Predicate<Gasto> condicion);
+	public List<Gasto> getGastosPorCategoria(Categoria categoria); 
 	
 	public void addGasto(Gasto gasto) throws ElementoExistenteException, ErrorPersistenciaException;
 	
 	public void removeGasto(Gasto gasto) throws ErrorPersistenciaException;
 	
-	public void updateGasto(Gasto gasto) throws ErrorPersistenciaException; 
+	public void updateGasto(Gasto gasto) throws ErrorPersistenciaException;
+
+
 }
