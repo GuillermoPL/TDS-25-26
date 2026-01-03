@@ -1,13 +1,23 @@
 package umu.tds.controlador;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.time.LocalDate;
+
 import umu.tds.Configuracion;
 import umu.tds.adapters.repository.RepositorioGastos;
 import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
+import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
+
+import umu.tds.modelo.CuentaCompartida;
+import umu.tds.modelo.EstrategiaReparto;
+import umu.tds.modelo.FactoriaEstrategia;
 import umu.tds.modelo.Gasto;
 import umu.tds.modelo.Categoria;
 import umu.tds.modelo.EventoSistema;
@@ -50,6 +60,50 @@ public class ControladorAppGastos {
 				.collect(Collectors.toList());
 	}
 	
+	//Crea instancia de CuentaCompartida
+	public void crearCuentaCompartida(String tipoEstrategia, Map<String, Double> datosVista) {
+		Map<Usuario, Double> porcentajesUsuarios = null;
+	    Set<Usuario> usuarios = new HashSet<>();
+	    
+	    // 1. Obtenemos los objetos Usuario a partir de los logins de la vista
+	    for (String login : datosVista.keySet()) {
+	    	Usuario u = repositorio.getUsuario(login);
+	    	if (u == null) {
+	            u = new Usuario(login); // Asumiendo que el constructor de Usuario recibe el nombre
+	            repositorio.addUsuario(u); // Registramos el nuevo usuario en el repositorio
+	        }
+	        usuarios.add(u); // Esto debe hacerse siempre para llenar el Set
+	        
+	        // 2. Solo si es porcentual, también llenamos el mapa de porcentajes
+	        if (tipoEstrategia.equalsIgnoreCase("PORCENTUAL")) {
+	            if (porcentajesUsuarios == null) porcentajesUsuarios = new HashMap<>();
+	            porcentajesUsuarios.put(u, datosVista.get(login));
+	        }
+	    }
+
+	    // 3. Usamos la factoría Singleton para obtener la estrategia
+	    EstrategiaReparto estrategia = FactoriaEstrategia.getInstancia()
+	                                    .crearEstrategia(tipoEstrategia, porcentajesUsuarios);
+
+	    // 4. Creamos e inscribimos la cuenta pasándole el Set de usuarios
+	    CuentaCompartida nuevaCuenta = new CuentaCompartida(estrategia, usuarios);
+	    repositorio.addCuenta(nuevaCuenta);
+	}
+	
+	//Registra un gasto en una CuentaCompartida
+	public void añadirGastoACuentaCompartida(Gasto gasto, CuentaCompartida cuenta) {
+	    // 1. Delegamos el cálculo a la cuenta (que ya tiene su estrategia)
+	    // Esto actualizará los saldos según la lógica de image_fdc446 o image_fdc465
+	    cuenta.calcularGasto(gasto);
+
+	    // 2. Guardamos el gasto en el repositorio para que persista
+	    try {
+			repositorio.addGasto(gasto);
+		} catch (ElementoExistenteException e) {
+			e.printStackTrace();
+		} catch (ErrorPersistenciaException e) {
+			e.printStackTrace();
+		}
 	public List<String> getNombreCategorias() {
 	    return repositorio.getGastos().stream()
 	            .map(gasto -> gasto.getCategoria().toString()) // Usa tu toString() que devuelve el id

@@ -1,7 +1,5 @@
 package umu.tds.modelo;
 
-import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Usuario {
@@ -9,9 +7,7 @@ public class Usuario {
 	@JsonProperty("user_id")
 	private String id;
 
-	public Usuario() {
-		this(null);
-	}
+	public Usuario() {}
 
 	public Usuario(String id) {
 		this.id = id;

@@ -32,7 +32,7 @@ public class Gasto {
 	public Gasto(String id, double importe, Categoria categoria, Usuario pagador) {
 		this.id = id;
 		this.importe = importe;
-		fecha = LocalDate.now();
+		this.fecha = LocalDate.now();
 		this.categoria = categoria;
 		this.pagador = pagador;
 		this.cuenta = null;
@@ -79,6 +79,10 @@ public class Gasto {
 	public void setCategoria(Categoria categoria) {
 		this.categoria = categoria;
 	}
+	
+	public boolean isCategoria(Categoria categoria) {
+		return this.categoria.equals(categoria);
+	}
 
 	public Usuario getPagador() {
 		return pagador;
@@ -117,6 +121,14 @@ public class Gasto {
     public String toString() {
         return "Gasto [id=" + id + ", importe=" + importe + ", categoría=" + categoria + "]";
     }
+
+	public boolean realizadoEnUltimoMes() {
+		return this.fecha.isAfter(LocalDate.now().minusMonths(1));
+	}
+	
+	public boolean realizadoEnUltimaSemana() {
+		return this.fecha.isAfter(LocalDate.now().minusWeeks(1));
+	}
 	
 	
 }
