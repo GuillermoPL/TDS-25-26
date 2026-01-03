@@ -21,7 +21,7 @@ public abstract class Configuracion {
     public abstract String getRutaGastos();
     public abstract String getRutaCuentas();
     public abstract String getRutaUsuarios();
-
+    public abstract String getRutaAlertas();
     public SceneManager getSceneManager() {
         return sceneManager;
     }

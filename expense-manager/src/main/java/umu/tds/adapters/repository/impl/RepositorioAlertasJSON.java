@@ -41,20 +41,16 @@ public class RepositorioAlertasJSON implements RepositorioAlertas{
 	}
 
 	private List<Alerta> cargarAlertas(String rutaFichero)
-			throws StreamReadException, DatabindException, IOException {
+	        throws StreamReadException, DatabindException, IOException {
 
-		// Intentamos abrir el fichero como recurso
-		InputStream ficheroStream = getClass().getResourceAsStream(rutaFichero);
+	    InputStream ficheroStream = getClass().getResourceAsStream(rutaFichero);
+	    ObjectMapper mapper = new ObjectMapper();
+	    
+	    // REGISTRA ESTO para que Jackson entienda las fechas (LocalDate/LocalDateTime)
+	    mapper.registerModule(new JavaTimeModule());
 
-		// Usamos Jackson para leer
-		ObjectMapper mapper = new ObjectMapper();
-
-		// Leemos el JSON y lo convertimos directamente a una Lista de Alertas
-		List<Alerta> alertasCargadas = mapper.readValue(ficheroStream, new TypeReference<List<Alerta>>() {
-		});
-
-		return alertasCargadas;
-
+	    List<Alerta> alertasCargadas = mapper.readValue(ficheroStream, new TypeReference<List<Alerta>>() {});
+	    return alertasCargadas;
 	}
 
 	@Override
