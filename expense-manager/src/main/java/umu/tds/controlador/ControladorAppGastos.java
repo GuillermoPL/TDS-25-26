@@ -37,7 +37,16 @@ public class ControladorAppGastos {
         this.repoCuentas = repoCuentas;
     }
 	
-	
+    public List<CuentaCompartida> getCuentasCompartidas() {
+        return repoCuentas.getCuentas();
+    }
+    
+    public List<String> getLoginsUsuarios() {
+        return repoCuentas.getUsuarios().stream()
+                .map(Usuario::getLogin)
+                .collect(Collectors.toList());
+    }
+    
 	//gestion de la lista
 	// Métodos para gestionar la lista
     public void registrarObservador(IObservador obs) {
