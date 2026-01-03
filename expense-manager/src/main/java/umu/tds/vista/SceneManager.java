@@ -32,7 +32,11 @@ public class SceneManager {
     public void showEstadisticas() {
         cargarYMostrar("EstadisticasView");
     }
-
+    
+    public void showCuentas() {
+        cargarYMostrar("CuentasView");
+    }
+    
     // Para "Nuevo Gasto" o "Nueva Categoría" si quieres que sean diálogos simples
     public void showNuevoGastoDialogo() {
         cargarYMostrarDialogo("NuevoGastoView", "Registrar Gasto");
@@ -106,4 +110,6 @@ public class SceneManager {
             throw new RuntimeException(e);
         }
     }
+    
+    
 }

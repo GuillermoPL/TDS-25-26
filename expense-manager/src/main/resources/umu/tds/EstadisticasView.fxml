@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="umu.tds.vista.EstadisticasViewController">
+   <top>
+      <fx:include source="BarraMenu.fxml" />
+   </top>
+   <center>
+      <VBox alignment="TOP_CENTER" spacing="20.0" style="-fx-padding: 30;">
+         <children>
+            <Label text="Resumen de Gastos por Categoría">
+               <font>
+                  <Font name="System Bold" size="24.0" />
+               </font>
+            </Label>
+            
+            <PieChart fx:id="graficoCategorias" title="Distribución porcentual" VBox.vgrow="ALWAYS" />
+            
+            <Label fx:id="lblTotal" text="Total acumulado: 0.00 €">
+               <font>
+                  <Font size="18.0" />
+               </font>
+            </Label>
+         </children>
+      </VBox>
+   </center>
+</BorderPane>
