@@ -55,4 +55,9 @@ public class BarraMenuControllerView implements IObservador {
     @FXML private void irAAlertas() { Configuracion.getInstancia().getSceneManager().showAlertas(); }
     @FXML private void irACategorias() { Configuracion.getInstancia().getSceneManager().showCategorias(); }
     @FXML private void irAEstadisticas() { Configuracion.getInstancia().getSceneManager().showEstadisticas(); }
+    @FXML
+    private void irACuentas() {
+        // Usamos el SceneManager que ya tiene el método showCuentas()
+        Configuracion.getInstancia().getSceneManager().showCuentas();
+    }
 }
