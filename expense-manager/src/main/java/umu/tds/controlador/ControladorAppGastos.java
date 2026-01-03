@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import java.time.LocalDate;
 
 import umu.tds.Configuracion;
+import umu.tds.adapters.repository.RepositorioCuentas;
 import umu.tds.adapters.repository.RepositorioGastos;
 import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
 import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
@@ -28,11 +29,13 @@ import umu.tds.modelo.Usuario;
 //PATRON SINGLETON
 public class ControladorAppGastos {
 	private static ControladorAppGastos unicaInstancia;
-    private RepositorioGastos repositorio;
+    private RepositorioGastos repoGastos;
+    private RepositorioCuentas repoCuentas;
     private List<IObservador> observadores = new LinkedList<>();
     // Constructor privado
     private ControladorAppGastos() {
-        this.repositorio = Configuracion.getInstancia().getRepositorioGastos();
+        this.repoGastos = Configuracion.getInstancia().getRepositorioGastos();
+        this.repoCuentas = Configuracion.getInstancia().getRepositorioCuentas();
     }
 	
 	public static ControladorAppGastos getInstancia() {
@@ -54,7 +57,7 @@ public class ControladorAppGastos {
     }
 	//Devuelve gastos que pasan un filtro o varios
 	public List<Gasto> getGastosPorCondicion(Predicate<Gasto> condicion) {
-		List<Gasto> gastos = repositorio.getGastos();
+		List<Gasto> gastos = repoGastos.getGastos();
 		return gastos.stream()
 				.filter(g -> condicion.test(g))
 				.collect(Collectors.toList());
@@ -67,10 +70,10 @@ public class ControladorAppGastos {
 	    
 	    // 1. Obtenemos los objetos Usuario a partir de los logins de la vista
 	    for (String login : datosVista.keySet()) {
-	    	Usuario u = repositorio.getUsuario(login);
+	    	Usuario u = repoCuentas.getUsuario(login);
 	    	if (u == null) {
 	            u = new Usuario(login); // Asumiendo que el constructor de Usuario recibe el nombre
-	            repositorio.addUsuario(u); // Registramos el nuevo usuario en el repositorio
+	            repoCuentas.addUsuario(u); // Registramos el nuevo usuario en el repositorio
 	        }
 	        usuarios.add(u); // Esto debe hacerse siempre para llenar el Set
 	        
@@ -87,25 +90,26 @@ public class ControladorAppGastos {
 
 	    // 4. Creamos e inscribimos la cuenta pasándole el Set de usuarios
 	    CuentaCompartida nuevaCuenta = new CuentaCompartida(estrategia, usuarios);
-	    repositorio.addCuenta(nuevaCuenta);
+	    repoCuentas.addCuenta(nuevaCuenta);
 	}
 	
 	//Registra un gasto en una CuentaCompartida
 	public void añadirGastoACuentaCompartida(Gasto gasto, CuentaCompartida cuenta) {
 	    // 1. Delegamos el cálculo a la cuenta (que ya tiene su estrategia)
-	    // Esto actualizará los saldos según la lógica de image_fdc446 o image_fdc465
 	    cuenta.calcularGasto(gasto);
 
 	    // 2. Guardamos el gasto en el repositorio para que persista
 	    try {
-			repositorio.addGasto(gasto);
+			repoGastos.addGasto(gasto);
 		} catch (ElementoExistenteException e) {
 			e.printStackTrace();
 		} catch (ErrorPersistenciaException e) {
 			e.printStackTrace();
-		}
+		}   
+	}
+	
 	public List<String> getNombreCategorias() {
-	    return repositorio.getGastos().stream()
+	    return repoGastos.getGastos().stream()
 	            .map(gasto -> gasto.getCategoria().toString()) // Usa tu toString() que devuelve el id
 	            .distinct()
 	            .sorted()
@@ -132,7 +136,7 @@ public class ControladorAppGastos {
 	        Gasto nuevo = new Gasto(id, importe, fecha, cat, pagador); 
 
 	        // 4. Persistencia
-	        repositorio.addGasto(nuevo);
+	        repoGastos.addGasto(nuevo);
 
 	        // 5. Notificación (Magia del patrón Observador)
 	        this.notificarCambio(EventoSistema.NUEVO_GASTO, nuevo);

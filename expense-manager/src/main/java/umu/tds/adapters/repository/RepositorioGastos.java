@@ -19,15 +19,7 @@ public interface RepositorioGastos {
 	
 	public void updateGasto(Gasto gasto) throws ErrorPersistenciaException;
 
-	public void addCuenta(CuentaCompartida cuenta);
 	
-	public List<CuentaCompartida> getCuentas();
-	
-	public List<Usuario> getUsuarios();
-	
-	public Usuario getUsuario(String nombre);
-	
-	public void addUsuario(Usuario u);
 	
 	
 }
