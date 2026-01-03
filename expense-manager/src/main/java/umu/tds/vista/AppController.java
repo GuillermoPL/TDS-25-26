@@ -61,4 +61,10 @@ public class AppController implements IObservador {
         System.out.println("Evento recibido: " + evento);
         // Lógica según el evento
     }
+    
+    @FXML
+    private void mostrarGestionCategorias() {
+        // Usamos el SceneManager que ya tienes para cargar la subvista en el centro
+        cargarSubVista("/umu/tds/CategoriasView.fxml");
+    }
 }

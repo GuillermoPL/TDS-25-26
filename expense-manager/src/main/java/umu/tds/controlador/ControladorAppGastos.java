@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import java.time.LocalDate;
 import umu.tds.Configuracion;
 import umu.tds.adapters.repository.RepositorioGastos;
+import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
 import umu.tds.modelo.Gasto;
 import umu.tds.modelo.Categoria;
 import umu.tds.modelo.EventoSistema;
@@ -92,5 +93,20 @@ public class ControladorAppGastos {
 	        System.err.println("Error inesperado: " + e.getMessage());
 	        e.printStackTrace();
 	    }
+	}
+	public void registrarCategoria(String nombre) throws ElementoExistenteException {
+	    // 1. Validar si ya existe (Criterio de Aceptación HU 1.2) 
+	    List<String> existentes = getNombreCategorias();
+	    if (existentes.contains(nombre)) {
+	        throw new ElementoExistenteException("La categoría '" + nombre + "' ya existe.");
+	    }
+
+	    // 2. Crear y persistir
+	    // Nota: Aquí podrías añadir un método addCategoria a tu RepositorioGastos 
+	    // o simplemente crear un gasto ficticio/inicial para que Jackson la registre
+	    Categoria nueva = new Categoria(nombre);
+	    
+	    // 3. Notificar a las vistas para que actualicen sus ComboBox
+	    this.notificarCambio(EventoSistema.NUEVA_CATEGORIA, nueva);
 	}
 }
