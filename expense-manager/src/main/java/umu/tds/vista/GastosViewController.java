@@ -8,10 +8,17 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import umu.tds.controlador.ControladorAppGastos;
+import umu.tds.modelo.EventoSistema;
 import umu.tds.modelo.Gasto;
 import javafx.scene.control.DatePicker;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import java.io.IOException;
 
-public class GastosViewController {
+public class GastosViewController implements IObservador {
 
     @FXML private TableView<Gasto> tablaGastos;
     @FXML private TableColumn<Gasto, LocalDate> colFecha;
@@ -38,6 +45,8 @@ public class GastosViewController {
         cbCategoria.getItems().addAll(categorias);
         cbCategoria.setValue("Todas");
 
+        ControladorAppGastos.getInstancia().registrarObservador(this);
+        
         refrescarTabla();
     }
 
@@ -47,6 +56,14 @@ public class GastosViewController {
         );
     }
 
+    @Override
+    public void actualizar(EventoSistema evento, Object datos) {
+        // Si el controlador dice que hay un nuevo gasto, refrescamos
+        if (evento == EventoSistema.NUEVO_GASTO) {
+            refrescarTabla();
+            System.out.println("Vista de Gastos: ¡Tabla actualizada!");
+        }
+    }
     // --- MÉTODOS DE ACCIÓN  ---
 
     @FXML
@@ -78,8 +95,20 @@ public class GastosViewController {
 
     @FXML
     private void handleNuevoGasto() {
-        System.out.println("Abriendo formulario de nuevo gasto...");
-        // Aquí abrirás un diálogo para registrar un nuevo gasto
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/umu/tds/NuevoGastoView.fxml"));
+            Parent root = loader.load();
+            Stage stage = new Stage();
+            stage.setTitle("Nuevo Gasto");
+            stage.setScene(new Scene(root));
+            stage.initModality(Modality.APPLICATION_MODAL); // Bloquea la ventana principal hasta cerrar esta
+            stage.showAndWait();
+            
+            // Al volver, refrescamos la tabla. redundante, pero no hace daño
+            refrescarTabla();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
