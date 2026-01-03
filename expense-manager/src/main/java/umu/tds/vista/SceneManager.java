@@ -1,40 +1,49 @@
 package umu.tds.vista;
 
+import java.io.IOException;
+
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import java.io.IOException;
+import umu.tds.App;
 
 public class SceneManager {
-    private static SceneManager instancia;
     private Stage stage;
+    private Scene scenaActual;
 
-    private SceneManager() {} // Constructor privado para Singleton 
-
-    public static SceneManager getInstancia() {
-        if (instancia == null) {
-            instancia = new SceneManager();
-        }
-        return instancia;
-    }
-
-    public void setStage(Stage stage) {
+    public void inicializar(Stage stage) {
         this.stage = stage;
     }
 
-    public void cambiarEscena(String fxmlPath, String titulo) {
+    
+    public void showGastos() {
+        cargarYMostrar("/umu/tds/GastosView");
+    }
+
+    public void showCategorias() {
+        cargarYMostrar("/umu/tds/CategoriasView");
+    }
+
+    private void cargarYMostrar(String fxml) {
         try {
-            // Carga el recurso FXML desde la carpeta resources 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
-            Parent root = loader.load();
-            Scene scene = new Scene(root);
-            
-            stage.setTitle(titulo);
-            stage.setScene(scene);
-            stage.show();
+            Parent root = loadFXML(fxml);
+            if (scenaActual == null) {
+                // La primera vez se crea la escena
+                scenaActual = new Scene(root);
+                stage.setScene(scenaActual);
+                stage.show();
+            } else {
+                // Las siguientes veces SOLO se cambia el contenido de la escena
+                scenaActual.setRoot(root); 
+            }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
+    }
+
+    private Parent loadFXML(String fxml) throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxml + ".fxml"));
+        return fxmlLoader.load();
     }
 }
