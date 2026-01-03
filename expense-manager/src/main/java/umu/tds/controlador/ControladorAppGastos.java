@@ -36,4 +36,12 @@ public class ControladorAppGastos {
 				.filter(g -> condicion.test(g))
 				.collect(Collectors.toList());
 	}
+	
+	public List<String> getNombreCategorias() {
+	    return repositorio.getGastos().stream()
+	            .map(gasto -> gasto.getCategoria().toString()) // Usa tu toString() que devuelve el id
+	            .distinct()
+	            .sorted()
+	            .collect(Collectors.toList());
+	}
 }
