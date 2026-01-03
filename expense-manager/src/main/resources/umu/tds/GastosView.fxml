@@ -19,28 +19,29 @@
          <children>
             <Label text="Mis Gastos">
                <font>
-                  <Font name="System Bold" size="22.0" />
+                  <Font name="System Bold" size="24.0" />
                </font>
             </Label>
 
             <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color: #eeeeee; -fx-padding: 10; -fx-background-radius: 5;">
                <children>
                   <Label text="Desde:" />
-                  <DatePicker fx:id="dpDesde" prefWidth="120.0" />
+                  <DatePicker fx:id="dpDesde" prefWidth="120.0" promptText="dd/mm/aaaa" />
                   <Label text="Hasta:" />
-                  <DatePicker fx:id="dpHasta" prefWidth="120.0" />
+                  <DatePicker fx:id="dpHasta" prefWidth="120.0" promptText="dd/mm/aaaa" />
                   <Separator orientation="VERTICAL" />
                   <Label text="Categoría:" />
-                  <ComboBox fx:id="cbCategoria" prefWidth="150.0" promptText="Todas" />
+                  <ComboBox fx:id="cbCategoria" prefWidth="150.0" />
                   <Button mnemonicParsing="false" onAction="#handleFiltrar" style="-fx-background-color: #2196f3; -fx-text-fill: white;" text="Filtrar" />
+                  <Button mnemonicParsing="false" onAction="#handleLimpiarFiltros" text="Limpiar" />
                </children>
             </HBox>
 
             <TableView fx:id="tablaGastos" VBox.vgrow="ALWAYS">
                <columns>
-                  <TableColumn fx:id="colFecha" prefWidth="120.0" text="Fecha" />
-                  <TableColumn fx:id="colCategoria" prefWidth="150.0" text="Categoría" />
-                  <TableColumn fx:id="colConcepto" prefWidth="250.0" text="Concepto" />
+                  <TableColumn fx:id="colFecha" prefWidth="100.0" text="Fecha" />
+                  <TableColumn fx:id="colCategoria" prefWidth="130.0" text="Categoría" />
+                  <TableColumn fx:id="colConcepto" prefWidth="250.0" text="Concepto/ID" />
                   <TableColumn fx:id="colImporte" prefWidth="100.0" text="Importe (€)" />
                   <TableColumn fx:id="colPagador" prefWidth="120.0" text="Pagador" />
                </columns>
