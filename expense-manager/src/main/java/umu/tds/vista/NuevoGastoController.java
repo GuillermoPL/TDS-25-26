@@ -7,8 +7,11 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
-import javafx.stage.Stage;
+import javafx.stage.Window; // Cambiamos Stage por Window
+import umu.tds.Configuracion;
 import umu.tds.controlador.ControladorAppGastos;
+import umu.tds.modelo.Categoria;
+import umu.tds.modelo.Gasto;
 
 public class NuevoGastoController {
 
@@ -16,39 +19,60 @@ public class NuevoGastoController {
     @FXML private DatePicker dpFecha;
     @FXML private ComboBox<String> cbCategoria;
 
+    private Gasto gastoAEditar = null;
+
     @FXML
     public void initialize() {
-        // 1. Ponemos la fecha de hoy por defecto
         dpFecha.setValue(LocalDate.now());
 
-        // 2. Rellenamos el combo con las categorías existentes en el sistema
-        cbCategoria.getItems().addAll(ControladorAppGastos.getInstancia().getNombreCategorias());
+        // Acceso correcto según el patrón del profesor
+        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+        cbCategoria.getItems().addAll(ctrl.getNombreCategorias());
+    }
+
+    public void setGasto(Gasto gasto) {
+        this.gastoAEditar = gasto;
+        
+        txtImporte.setText(String.valueOf(gasto.getImporte()));
+        dpFecha.setValue(gasto.getFecha());
+        cbCategoria.setValue(gasto.getCategoria().toString());
     }
 
     @FXML
     private void handleGuardar() {
-        // 1. Recoger datos y validar
-        String strImporte = txtImporte.getText();
+        String strImporte = txtImporte.getText().trim();
         LocalDate fecha = dpFecha.getValue();
-        String categoria = cbCategoria.getValue();
+        String nombreCategoria = cbCategoria.getValue();
 
-        if (strImporte.isEmpty() || fecha == null || categoria == null) {
-            mostrarAlerta("Error de validación", "Por favor, rellena todos los campos.");
+        if (strImporte.isEmpty() || fecha == null || nombreCategoria == null) {
+            mostrarAlerta("Campos incompletos", "Por favor, rellena todos los campos.");
             return;
         }
 
         try {
             double importe = Double.parseDouble(strImporte);
+            
+            // Validación extra: no permitir gastos negativos (HU 1.1)
+            if (importe <= 0) {
+                mostrarAlerta("Importe no válido", "El importe debe ser mayor que cero.");
+                return;
+            }
 
-            // 2. Llamar al controlador de negocio
-            // Esto guardará en el JSON y NOTIFICARÁ a la tabla automáticamente
-            ControladorAppGastos.getInstancia().registrarGasto(importe, fecha, categoria);
+            ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
 
-            // 3. Cerrar la ventana actual
+            if (gastoAEditar == null) {
+                ctrl.registrarGasto(importe, fecha, nombreCategoria);
+            } else {
+                gastoAEditar.setImporte(importe);
+                gastoAEditar.setFecha(fecha);
+                gastoAEditar.setCategoria(new Categoria(nombreCategoria));
+                ctrl.modificarGasto(gastoAEditar);
+            }
+
             cerrarVentana();
 
         } catch (NumberFormatException e) {
-            mostrarAlerta("Error de formato", "El importe debe ser un número válido.");
+            mostrarAlerta("Error de formato", "Introduce un número válido para el importe.");
         }
     }
 
@@ -58,8 +82,9 @@ public class NuevoGastoController {
     }
 
     private void cerrarVentana() {
-        Stage stage = (Stage) txtImporte.getScene().getWindow();
-        stage.close();
+        // Al usar DialogPane, obtenemos la Window genérica para cerrar el diálogo
+        Window window = txtImporte.getScene().getWindow();
+        window.hide(); // hide() es más seguro que close() dentro de un Dialog de JavaFX
     }
 
     private void mostrarAlerta(String titulo, String mensaje) {

@@ -3,14 +3,21 @@ package umu.tds.vista;
 import java.util.List;
 import java.time.LocalDate;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import umu.tds.App;
+import umu.tds.Configuracion;
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.modelo.EventoSistema;
 import umu.tds.modelo.Gasto;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -32,36 +39,43 @@ public class GastosViewController implements IObservador {
 
     @FXML
     public void initialize() {
-        // Configuración de columnas
+        // 1. Configuración de columnas
         colFecha.setCellValueFactory(new PropertyValueFactory<>("fecha"));
         colCategoria.setCellValueFactory(new PropertyValueFactory<>("categoria"));
         colConcepto.setCellValueFactory(new PropertyValueFactory<>("id"));
         colImporte.setCellValueFactory(new PropertyValueFactory<>("importe"));
         colPagador.setCellValueFactory(new PropertyValueFactory<>("pagador"));
 
-        // Cargar nombres de categorías para el filtro [cite: 9, 16]
-        List<String> categorias = ControladorAppGastos.getInstancia().getNombreCategorias(); 
+        // 2. Acceso al controlador de negocio mediante el Service Locator de la Configuración
+        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+
+        // 3. Rellenar filtros
+        List<String> categorias = ctrl.getNombreCategorias(); 
         cbCategoria.getItems().add("Todas");
         cbCategoria.getItems().addAll(categorias);
         cbCategoria.setValue("Todas");
 
-        ControladorAppGastos.getInstancia().registrarObservador(this);
+        // 4. Registro como observador
+        ctrl.registrarObservador(this);
         
         refrescarTabla();
     }
 
     private void refrescarTabla() {
-        tablaGastos.getItems().setAll(
-            ControladorAppGastos.getInstancia().getGastosPorCondicion(g -> true)
-        );
+        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+        // Cargamos todos los gastos inicialmente
+        tablaGastos.getItems().setAll(ctrl.getGastosPorCondicion(g -> true));
     }
 
     @Override
     public void actualizar(EventoSistema evento, Object datos) {
-        // Si el controlador dice que hay un nuevo gasto, refrescamos
-        if (evento == EventoSistema.NUEVO_GASTO) {
-            refrescarTabla();
-            System.out.println("Vista de Gastos: ¡Tabla actualizada!");
+        // Refrescamos si hay cambios. Asegúrate de que estos nombres están en tu Enum
+        if (evento == EventoSistema.NUEVO_GASTO || 
+            evento == EventoSistema.GASTO_ELIMINADO || 
+            evento == EventoSistema.GASTO_MODIFICADO) {
+            
+            // Es importante ejecutar esto en el hilo de la UI de JavaFX
+            javafx.application.Platform.runLater(() -> refrescarTabla());
         }
     }
     // --- MÉTODOS DE ACCIÓN  ---
@@ -72,50 +86,32 @@ public class GastosViewController implements IObservador {
         LocalDate hasta = dpHasta.getValue();
         String catSeleccionada = cbCategoria.getValue();
 
-        // Definimos la condición (Predicado)
-        java.util.function.Predicate<Gasto> condicion = g -> {
-            // Filtro de Fecha "Desde"
+        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+
+        List<Gasto> filtrados = ctrl.getGastosPorCondicion(g -> {
             if (desde != null && g.getFecha().isBefore(desde)) return false;
-            
-            // Filtro de Fecha "Hasta"
             if (hasta != null && g.getFecha().isAfter(hasta)) return false;
-            
-            // Filtro de Categoría
             if (catSeleccionada != null && !catSeleccionada.equals("Todas")) {
                 if (!g.getCategoria().toString().equals(catSeleccionada)) return false;
             }
-            
-            return true; // Si pasa todos los filtros, el gasto se queda
-        };
+            return true;
+        });
 
-        // Actualizamos la tabla pidiendo al controlador solo los que cumplen la condición
-        List<Gasto> filtrados = ControladorAppGastos.getInstancia().getGastosPorCondicion(condicion);
         tablaGastos.getItems().setAll(filtrados);
     }
 
     @FXML
     private void handleNuevoGasto() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/umu/tds/NuevoGastoView.fxml"));
-            Parent root = loader.load();
-            Stage stage = new Stage();
-            stage.setTitle("Nuevo Gasto");
-            stage.setScene(new Scene(root));
-            stage.initModality(Modality.APPLICATION_MODAL); // Bloquea la ventana principal hasta cerrar esta
-            stage.showAndWait();
-            
-            // Al volver, refrescamos la tabla. redundante, pero no hace daño
-            refrescarTabla();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // Mucho más limpio y sin errores de visibilidad
+        Configuracion.getInstancia().getSceneManager().showNuevoGasto();
     }
 
     @FXML
     private void handleEditarGasto() {
         Gasto seleccionado = tablaGastos.getSelectionModel().getSelectedItem();
         if (seleccionado != null) {
-            System.out.println("Editando: " + seleccionado); 
+            // El SceneManager se encarga de todo lo feo del FXMLLoader
+            Configuracion.getInstancia().getSceneManager().showEditarGasto(seleccionado);
         }
     }
 
@@ -123,8 +119,15 @@ public class GastosViewController implements IObservador {
     private void handleBorrarGasto() {
         Gasto seleccionado = tablaGastos.getSelectionModel().getSelectedItem();
         if (seleccionado != null) {
-            System.out.println("Borrando: " + seleccionado); 
-            // Llamar al controlador de negocio para eliminarlo
+            Alert confirm = new Alert(AlertType.CONFIRMATION, "¿Borrar gasto de " + seleccionado.getImporte() + "€?", ButtonType.YES, ButtonType.NO);
+            confirm.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.YES) {
+                    // ACCESO CORRECTO A TRAVÉS DE CONFIGURACIÓN
+                    Configuracion.getInstancia().getControladorAppGastos().eliminarGasto(seleccionado);
+                }
+            });
         }
     }
+
+    
 }

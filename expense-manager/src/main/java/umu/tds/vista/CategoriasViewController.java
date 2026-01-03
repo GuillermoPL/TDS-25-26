@@ -2,6 +2,7 @@ package umu.tds.vista;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import umu.tds.Configuracion; // Importante
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.modelo.EventoSistema;
 import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
@@ -12,7 +13,9 @@ public class CategoriasViewController implements IObservador {
 
     @FXML
     public void initialize() {
-        ControladorAppGastos.getInstancia().registrarObservador(this);
+        // CAMBIO: Acceso mediante Configuracion
+        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+        ctrl.registrarObservador(this);
         refrescarLista();
     }
 
@@ -22,23 +25,26 @@ public class CategoriasViewController implements IObservador {
         if (nombre.isEmpty()) return;
 
         try {
-            ControladorAppGastos.getInstancia().registrarCategoria(nombre); // 
+            // CAMBIO: Acceso mediante Configuracion
+            Configuracion.getInstancia().getControladorAppGastos().registrarCategoria(nombre); 
             txtNombreCategoria.clear();
         } catch (ElementoExistenteException e) {
-            // Cumplimos el criterio de error por duplicado 
             Alert alert = new Alert(Alert.AlertType.ERROR, e.getMessage());
             alert.showAndWait();
         }
     }
 
     private void refrescarLista() {
-        listaCategorias.getItems().setAll(ControladorAppGastos.getInstancia().getNombreCategorias());
+        // CAMBIO: Acceso mediante Configuracion
+        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+        listaCategorias.getItems().setAll(ctrl.getNombreCategorias());
     }
 
     @Override
     public void actualizar(EventoSistema evento, Object datos) {
         if (evento == EventoSistema.NUEVA_CATEGORIA) {
-            refrescarLista();
+            // Importante para que se vea el cambio inmediatamente
+            javafx.application.Platform.runLater(() -> refrescarLista());
         }
     }
 }

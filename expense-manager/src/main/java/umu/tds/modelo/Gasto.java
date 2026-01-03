@@ -101,21 +101,17 @@ public class Gasto {
 	}
 	
 	@Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        Gasto other = (Gasto) obj;
-        // Asumimos que dos gastos son iguales si tienen el mismo ID
-        return id != null && id.equals(other.id);
-    }
-	
+	public int hashCode() {
+	    return (id == null) ? 0 : id.hashCode();
+	}
+
 	@Override
-    public int hashCode() {
-		if (id != null) {
-			return 0;
-		}
-		return id.hashCode();
-    }
+	public boolean equals(Object obj) {
+	    if (this == obj) return true;
+	    if (obj == null || getClass() != obj.getClass()) return false;
+	    Gasto other = (Gasto) obj;
+	    return id != null && id.equals(other.id);
+	}
     
     @Override
     public String toString() {
