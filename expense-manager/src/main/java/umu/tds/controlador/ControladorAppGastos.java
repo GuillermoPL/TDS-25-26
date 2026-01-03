@@ -34,6 +34,7 @@ public class ControladorAppGastos {
     private RepositorioGastos repoGastos;
     private RepositorioCuentas repoCuentas;
     private RepositorioAlertas repoAlertas;
+    private Set<String> categoriasPersonalizadas = new HashSet<>();
     private List<IObservador> observadores = new LinkedList<>();
     // Constructor
     public ControladorAppGastos(RepositorioGastos repoGastos, RepositorioCuentas repoCuentas, RepositorioAlertas repoAlertas) {
@@ -161,11 +162,12 @@ public class ControladorAppGastos {
 	}
 	
 	public List<String> getNombreCategorias() {
-	    return repoGastos.getGastos().stream()
-	            .map(gasto -> gasto.getCategoria().toString()) // Usa tu toString() que devuelve el id
-	            .distinct()
-	            .sorted()
-	            .collect(Collectors.toList());
+	    Set<String> nombres = repoGastos.getGastos().stream()
+	            .map(g -> g.getCategoria().toString())
+	            .collect(Collectors.toSet());
+	    nombres.addAll(categoriasPersonalizadas);
+	    
+	    return nombres.stream().sorted().collect(Collectors.toList());
 	}
 	
 	private void notificarCambio(EventoSistema evento, Object datos) {
@@ -206,19 +208,15 @@ public class ControladorAppGastos {
 	    verificarAlertas();
 	}
 	public void registrarCategoria(String nombre) throws ElementoExistenteException {
-	    // 1. Validar si ya existe (Criterio de Aceptación HU 1.2) 
 	    List<String> existentes = getNombreCategorias();
 	    if (existentes.contains(nombre)) {
 	        throw new ElementoExistenteException("La categoría '" + nombre + "' ya existe.");
 	    }
 
-	    // 2. Crear y persistir
-	    // Nota: Aquí podrías añadir un método addCategoria a tu RepositorioGastos 
-	    // o simplemente crear un gasto ficticio/inicial para que Jackson la registre
-	    Categoria nueva = new Categoria(nombre);
+	    categoriasPersonalizadas.add(nombre);
 	    
-	    // 3. Notificar a las vistas para que actualicen sus ComboBox
-	    this.notificarCambio(EventoSistema.NUEVA_CATEGORIA, nueva);
+	    // Notificamos el cambio para que las vistas se enteren
+	    this.notificarCambio(EventoSistema.NUEVA_CATEGORIA, nombre);
 	}
 	public void eliminarGasto(Gasto gasto) {
 	    try {
