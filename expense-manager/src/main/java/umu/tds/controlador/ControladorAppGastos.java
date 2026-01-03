@@ -28,21 +28,13 @@ import umu.tds.modelo.Usuario;
 
 //PATRON SINGLETON
 public class ControladorAppGastos {
-	private static ControladorAppGastos unicaInstancia;
     private RepositorioGastos repoGastos;
     private RepositorioCuentas repoCuentas;
     private List<IObservador> observadores = new LinkedList<>();
-    // Constructor privado
-    private ControladorAppGastos() {
-        this.repoGastos = Configuracion.getInstancia().getRepositorioGastos();
-        this.repoCuentas = Configuracion.getInstancia().getRepositorioCuentas();
-    }
-	
-	public static ControladorAppGastos getInstancia() {
-        if (unicaInstancia == null) {
-            unicaInstancia = new ControladorAppGastos();
-        }
-        return unicaInstancia;
+    // Constructor
+    public ControladorAppGastos(RepositorioGastos repoGastos, RepositorioCuentas repoCuentas) {
+        this.repoGastos = repoGastos;
+        this.repoCuentas = repoCuentas;
     }
 	
 	
@@ -166,5 +158,23 @@ public class ControladorAppGastos {
 	    
 	    // 3. Notificar a las vistas para que actualicen sus ComboBox
 	    this.notificarCambio(EventoSistema.NUEVA_CATEGORIA, nueva);
+	}
+	public void eliminarGasto(Gasto gasto) {
+	    try {
+	        repoGastos.removeGasto(gasto); 
+	        this.notificarCambio(EventoSistema.GASTO_ELIMINADO, gasto); 
+	    } catch (ErrorPersistenciaException e) {
+	        e.printStackTrace();
+	    }
+	}
+
+	public void modificarGasto(Gasto gasto) {
+	    try {
+	        // El objeto ya viene modificado de la vista (gracias al setGasto del controller)
+	        repoGastos.updateGasto(gasto); 
+	        this.notificarCambio(EventoSistema.GASTO_MODIFICADO, gasto);
+	    } catch (ErrorPersistenciaException e) {
+	        e.printStackTrace();
+	    }
 	}
 }

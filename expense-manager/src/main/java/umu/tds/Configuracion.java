@@ -1,51 +1,28 @@
 package umu.tds;
 
-import umu.tds.adapters.repository.RepositorioCuentas;
-import umu.tds.adapters.repository.RepositorioGastos;
-import umu.tds.adapters.repository.impl.RepositorioCuentasJSON;
-import umu.tds.adapters.repository.impl.RepositorioGastosJSON;
+import umu.tds.controlador.ControladorAppGastos;
+import umu.tds.vista.SceneManager;
 
-public class Configuracion {
-    private static Configuracion unicaInstancia;
-    private RepositorioGastos repoGastos; // Guardamos la interfaz
-    private RepositorioCuentas repoCuentas;
+public abstract class Configuracion {
+    private static Configuracion instancia;
+    private final SceneManager sceneManager = new SceneManager();
 
-    // Constructor Privado
-    private Configuracion() {
-        // Aquí decidimos la tecnología concreta (JSON)
-        this.repoGastos = new RepositorioGastosJSON();
-        this.repoCuentas = new RepositorioCuentasJSON();
+    // Solo invocado desde App
+    static void setInstancia(Configuracion impl) {
+        Configuracion.instancia = impl;
     }
 
     public static Configuracion getInstancia() {
-        if (unicaInstancia == null) unicaInstancia = new Configuracion();
-        return unicaInstancia;
+        return Configuracion.instancia;
     }
 
-    // Método para que los demás pidan la herramienta
-    public RepositorioGastos getRepositorioGastos() {
-        return repoGastos;
+    // Métodos que cada implementación debe definir
+    public abstract ControladorAppGastos getControladorAppGastos();
+    public abstract String getRutaGastos();
+    public abstract String getRutaCuentas();
+    public abstract String getRutaUsuarios();
+
+    public SceneManager getSceneManager() {
+        return sceneManager;
     }
-    
-    public RepositorioCuentas getRepositorioCuentas() {
-		return repoCuentas;
-	}
-
-	public String getRutaGastos() {
-		return "/data/gastos.json";
-	}
-
-	public String getRutaAlertas() {
-		return "/data/alertas.json";
-	}
-
-	public String getRutaCuentas() {
-		return "/data/cuentas.json";
-	}
-	
-	public String getRutaUsuarios() {
-		return "/data/usuarios.json";
-	}
-
-	
 }

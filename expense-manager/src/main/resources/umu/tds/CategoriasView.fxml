@@ -1,16 +1,25 @@
-<VBox spacing="15.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="umu.tds.vista.CategoriasViewController">
-   <children>
-      <Label text="Gestión de Categorías" style="-fx-font-weight: bold; -fx-font-size: 18px;" />
-      <HBox spacing="10.0">
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="umu.tds.vista.CategoriasViewController">
+   <top>
+      <fx:include source="BarraMenu.fxml" />
+   </top>
+   <center>
+      <VBox spacing="15.0" style="-fx-padding: 20;">
          <children>
-            <TextField fx:id="txtNombreCategoria" promptText="Nombre de la categoría..." HBox.hgrow="ALWAYS" />
-            <Button mnemonicParsing="false" onAction="#handleGuardar" style="-fx-background-color: #4caf50; -fx-text-fill: white;" text="Guardar" />
+            <Label text="Gestión de Categorías" style="-fx-font-weight: bold; -fx-font-size: 18px;" />
+            <HBox spacing="10.0">
+               <children>
+                  <TextField fx:id="txtNombreCategoria" promptText="Nombre de la categoría..." HBox.hgrow="ALWAYS" />
+                  <Button onAction="#handleGuardar" style="-fx-background-color: #4caf50; -fx-text-fill: white;" text="Añadir" />
+               </children>
+            </HBox>
+            <Label text="Categorías Actuales:" />
+            <ListView fx:id="listaCategorias" VBox.vgrow="ALWAYS" />
          </children>
-      </HBox>
-      <Label text="Categorías Actuales:" />
-      <ListView fx:id="listaCategorias" VBox.vgrow="ALWAYS" />
-   </children>
-   <padding>
-      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-   </padding>
-</VBox>
+      </VBox>
+   </center>
+</BorderPane>
