@@ -41,4 +41,8 @@ public class Usuario {
 	public boolean isUsuario(String nombre) {
 		return this.id.equals(nombre);
 	}
+	
+	public String getLogin() {
+	    return this.id; 
+	}
 }
