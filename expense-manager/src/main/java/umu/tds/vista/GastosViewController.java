@@ -85,13 +85,10 @@ public class GastosViewController implements IObservador {
 
     @Override
     public void actualizar(EventoSistema evento, Object datos) {
-        // Refrescamos si hay cambios. Asegúrate de que estos nombres están en tu Enum
-        if (evento == EventoSistema.NUEVO_GASTO || 
-            evento == EventoSistema.GASTO_ELIMINADO || 
-            evento == EventoSistema.GASTO_MODIFICADO) {
-            
-            // Es importante ejecutar esto en el hilo de la UI de JavaFX
-            javafx.application.Platform.runLater(() -> refrescarTabla());
+        if (evento == EventoSistema.NUEVA_CATEGORIA || evento == EventoSistema.NUEVO_GASTO) {
+            javafx.application.Platform.runLater(() -> {
+                actualizarComboCategorias();
+            });
         }
     }
     // --- MÉTODOS DE ACCIÓN  ---
