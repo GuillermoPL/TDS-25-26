@@ -11,6 +11,7 @@ import umu.tds.modelo.Gasto;
 import umu.tds.modelo.Categoria;
 import umu.tds.modelo.EventoSistema;
 import umu.tds.vista.IObservador;
+import umu.tds.modelo.Usuario;
 
 
 //PATRON SINGLETON
@@ -61,20 +62,34 @@ public class ControladorAppGastos {
     }
 	public void registrarGasto(double importe, LocalDate fecha, String nombreCat) {
 	    try {
+	        // 1. Obtenemos el usuario de la sesión (Imprescindible para el modelo)
+	        Usuario pagador = ControladorSesion.getInstancia().getUsuarioActual();
+	        
+	        if (pagador == null) {
+	            throw new RuntimeException("Error: No hay una sesión de usuario activa.");
+	        }
+
+	        // 2. Preparamos los datos
 	        String id = "G-" + System.currentTimeMillis();
 	        Categoria cat = new Categoria(nombreCat);
-	        // Asume que tienes un usuario actual (puedes obtenerlo de un controlador de sesión)
-	        Gasto nuevo = new Gasto(id, importe, fecha, cat, null); 
+	        
+	        // 3. Creamos el objeto con su pagador real
+	        Gasto nuevo = new Gasto(id, importe, fecha, cat, pagador); 
 
+	        // 4. Persistencia
 	        repositorio.addGasto(nuevo);
 
+	        // 5. Notificación (Magia del patrón Observador)
 	        this.notificarCambio(EventoSistema.NUEVO_GASTO, nuevo);
 	        
 	    } catch (umu.tds.adapters.repository.exceptions.ElementoExistenteException e) {
-	        System.err.println("Error: El gasto ya existe en el sistema.");
+	        System.err.println("Error: El ID del gasto ya existe.");
 	        e.printStackTrace();
 	    } catch (umu.tds.adapters.repository.exceptions.ErrorPersistenciaException e) {
-	        System.err.println("Error crítico al guardar en el JSON.");
+	        System.err.println("Error crítico al guardar en el archivo JSON.");
+	        e.printStackTrace();
+	    } catch (Exception e) {
+	        System.err.println("Error inesperado: " + e.getMessage());
 	        e.printStackTrace();
 	    }
 	}
