@@ -19,6 +19,11 @@ public class ConfiguracionImpl extends Configuracion {
     public ControladorAppGastos getControladorAppGastos() {
         return controlador;
     }
+    
+    @Override 
+    public String getRutaAlertas() { 
+        return "/data/alertas.json"; 
+    }
 
     @Override public String getRutaGastos() { return "/data/gastos.json"; }
     @Override public String getRutaCuentas() { return "/data/cuentas.json"; }
