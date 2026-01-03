@@ -26,7 +26,7 @@ import umu.tds.vista.IObservador;
 import umu.tds.modelo.Usuario;
 
 
-//PATRON SINGLETON
+
 public class ControladorAppGastos {
     private RepositorioGastos repoGastos;
     private RepositorioCuentas repoCuentas;
@@ -55,19 +55,22 @@ public class ControladorAppGastos {
 				.collect(Collectors.toList());
 	}
 	
-	//Crea instancia de CuentaCompartida
-	public void crearCuentaCompartida(String tipoEstrategia, Map<String, Double> datosVista) {
-		Map<Usuario, Double> porcentajesUsuarios = null;
+	// Añadimos las excepciones a la firma del método
+	public void crearCuentaCompartida(String tipoEstrategia, Map<String, Double> datosVista) 
+	        throws ElementoExistenteException, ErrorPersistenciaException {
+	    
+	    Map<Usuario, Double> porcentajesUsuarios = null;
 	    Set<Usuario> usuarios = new HashSet<>();
 	    
 	    // 1. Obtenemos los objetos Usuario a partir de los logins de la vista
 	    for (String login : datosVista.keySet()) {
-	    	Usuario u = repoCuentas.getUsuario(login);
-	    	if (u == null) {
-	            u = new Usuario(login); // Asumiendo que el constructor de Usuario recibe el nombre
-	            repoCuentas.addUsuario(u); // Registramos el nuevo usuario en el repositorio
+	        Usuario u = repoCuentas.getUsuario(login);
+	        if (u == null) {
+	            u = new Usuario(login); 
+	            // Aquí ya no marcará error porque el método propaga la excepción
+	            repoCuentas.addUsuario(u); 
 	        }
-	        usuarios.add(u); // Esto debe hacerse siempre para llenar el Set
+	        usuarios.add(u); 
 	        
 	        // 2. Solo si es porcentual, también llenamos el mapa de porcentajes
 	        if (tipoEstrategia.equalsIgnoreCase("PORCENTUAL")) {
@@ -76,13 +79,17 @@ public class ControladorAppGastos {
 	        }
 	    }
 
-	    // 3. Usamos la factoría Singleton para obtener la estrategia
+	    // 3. Usamos la factoría para obtener la estrategia de reparto (Patrón Estrategia)
 	    EstrategiaReparto estrategia = FactoriaEstrategia.getInstancia()
 	                                    .crearEstrategia(tipoEstrategia, porcentajesUsuarios);
 
-	    // 4. Creamos e inscribimos la cuenta pasándole el Set de usuarios
+	    // 4. Creamos e inscribimos la cuenta
 	    CuentaCompartida nuevaCuenta = new CuentaCompartida(estrategia, usuarios);
 	    repoCuentas.addCuenta(nuevaCuenta);
+	    
+	    // 5. IMPORTANTE: Notificar a los observadores que hay una nueva cuenta
+	    // para que la UI se actualice (HU 4.1)
+	    this.notificarCambio(EventoSistema.SALDO_ACTUALIZADO, nuevaCuenta);
 	}
 	
 	//Registra un gasto en una CuentaCompartida
