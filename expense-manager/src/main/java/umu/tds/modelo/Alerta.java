@@ -1,10 +1,9 @@
 package umu.tds.modelo;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
-import umu.tds.Configuracion;
 
 public class Alerta {
 	private double limite;
@@ -51,14 +50,16 @@ public class Alerta {
     	this.categoria = categoria;
     }
     
-    public boolean verificar() {
+    
+    public boolean verificarSiSuperada(List<Gasto> todosLosGastos) {
     	List<Gasto> gastosAAnalizar;
     	
     	if (this.categoria == null) {
-    		gastosAAnalizar = Configuracion.getInstancia().getRepositorioGastos().getGastos();
+    		gastosAAnalizar = todosLosGastos;
     	} else {
-    		gastosAAnalizar = Configuracion.getInstancia().getRepositorioGastos()
-    														.getGastosPorCategoria(this.categoria);
+    		gastosAAnalizar = todosLosGastos.stream()
+    										.filter(gasto -> gasto.isCategoria(this.categoria))
+    										.collect(Collectors.toList());
     	}
     	
     	return estrategia.verificar(gastosAAnalizar, this.limite);
