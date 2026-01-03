@@ -3,19 +3,18 @@ package umu.tds.modelo;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AlertaMensual implements IEstrategiaAlerta{
+public class EstrategiaAlertaSemanal implements IEstrategiaAlerta{
 
 	@Override
 	public boolean verificar(List<Gasto> gastosAAnalizar, double limite) {
 		
-		List<Gasto> gastosUltimoMes = gastosAAnalizar.stream()
-													.filter(Gasto::realizadoEnUltimoMes)
+		List<Gasto> gastosUltimaSemana = gastosAAnalizar.stream()
+													.filter(Gasto::realizadoEnUltimaSemana)
 													.collect(Collectors.toList());
-		double gastoAcumulado = gastosUltimoMes.stream()
+		double gastoAcumulado = gastosUltimaSemana.stream()
 												.collect(Collectors.summingDouble(Gasto::getImporte));
 		
 		
-		return gastoAcumulado < limite;
+		return gastoAcumulado > limite;
 	}
-
 }

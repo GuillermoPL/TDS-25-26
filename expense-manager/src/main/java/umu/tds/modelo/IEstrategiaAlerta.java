@@ -13,9 +13,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 )
 
 @JsonSubTypes({
- @JsonSubTypes.Type(value = AlertaSemanal.class, name = "semanal"),
- @JsonSubTypes.Type(value = AlertaMensual.class, name = "mensual")
+ @JsonSubTypes.Type(value = EstrategiaAlertaSemanal.class, name = "semanal"),
+ @JsonSubTypes.Type(value = EstrategiaAlertaMensual.class, name = "mensual")
 })
 public interface IEstrategiaAlerta {
 	public boolean verificar(List<Gasto> gastosAAnalizar, double limite);
 }
+
