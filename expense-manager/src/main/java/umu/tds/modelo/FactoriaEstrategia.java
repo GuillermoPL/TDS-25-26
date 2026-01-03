@@ -31,4 +31,15 @@ public class FactoriaEstrategia {
         // Lo más seguro es lanzar una excepción para avisar al programador o a la vista.
         throw new IllegalArgumentException("Tipo de estrategia no reconocido: " + tipo);
     }
+    
+    public IEstrategiaAlerta crearEstrategiaAlerta(String tipo) {
+        if (tipo.equalsIgnoreCase("SEMANAL")) {
+            return new EstrategiaAlertaSemanal();
+        }
+        if (tipo.equalsIgnoreCase("MENSUAL")) {
+            return new EstrategiaAlertaMensual();
+        }
+        throw new IllegalArgumentException("Periodo de alerta no reconocido: " + tipo);
+    }
+    
 }

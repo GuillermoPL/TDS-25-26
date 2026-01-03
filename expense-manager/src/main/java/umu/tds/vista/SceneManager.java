@@ -37,6 +37,10 @@ public class SceneManager {
         cargarYMostrar("CuentasView");
     }
     
+    public void showAlertas() {
+        cargarYMostrar("AlertasView");
+    }
+    
     // Para "Nuevo Gasto" o "Nueva Categoría" si quieres que sean diálogos simples
     public void showNuevoGastoDialogo() {
         cargarYMostrarDialogo("NuevoGastoView", "Registrar Gasto");

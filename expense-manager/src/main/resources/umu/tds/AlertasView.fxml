@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="umu.tds.vista.AlertasViewController">
+   <top>
+      <fx:include source="BarraMenu.fxml" />
+   </top>
+   <center>
+      <VBox spacing="20.0" style="-fx-padding: 30;">
+         <children>
+            <Label text="Configuración de Alertas de Presupuesto">
+               <font>
+                  <Font name="System Bold" size="22.0" />
+               </font>
+            </Label>
+
+            <HBox spacing="15.0" alignment="CENTER_LEFT" style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;">
+               <children>
+                  <VBox spacing="5.0">
+                     <children>
+                        <Label text="Límite (€):" />
+                        <TextField fx:id="txtLimite" prefWidth="100.0" promptText="0.00" />
+                     </children>
+                  </VBox>
+                  <VBox spacing="5.0">
+                     <children>
+                        <Label text="Periodo:" />
+                        <ComboBox fx:id="cbPeriodo" prefWidth="150.0" />
+                     </children>
+                  </VBox>
+                  <Button onAction="#handleCrearAlerta" style="-fx-background-color: #2196f3; -fx-text-fill: white;" text="Establecer Alerta">
+                     <HBox.margin>
+                        <Insets top="20.0" />
+                     </HBox.margin>
+                  </Button>
+               </children>
+            </HBox>
+
+            <Label text="Alertas Activas" style="-fx-font-weight: bold;" />
+            <ListView fx:id="listaAlertas" VBox.vgrow="ALWAYS" />
+            
+            <HBox alignment="CENTER_RIGHT">
+               <children>
+                  <Button onAction="#handleEliminarAlerta" style="-fx-background-color: #f44336; -fx-text-fill: white;" text="Eliminar Alerta Seleccionada" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </center>
+</BorderPane>
