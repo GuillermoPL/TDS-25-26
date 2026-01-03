@@ -33,8 +33,7 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 
 	private List<Gasto> gastos = null;
 	private String rutaFichero;
-	private List<CuentaCompartida> cuentas = null;
-	private List<Usuario> usuarios = null;
+	
 
 	private void cargaGastos() throws ErrorPersistenciaException {
 		try {
@@ -89,6 +88,9 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 
 	@Override
 	public void addGasto(Gasto gasto) throws ElementoExistenteException, ErrorPersistenciaException{
+		if (gastos == null) {
+			getGastos();
+		}
 		// Si el producto ya existe no puedo insertarlo
 		if (gastos.contains(gasto)) {
 			// TODO: Describir mejor el error de que ya esté el gasto registrado
@@ -110,6 +112,9 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 
 	@Override
 	public void removeGasto(Gasto gasto) throws ErrorPersistenciaException{
+		if (gastos == null) {
+			getGastos();
+		}
 		if (!gastos.contains(gasto)) {
 			return;
 		}
@@ -128,6 +133,9 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 
 	@Override
 	public void updateGasto(Gasto gasto) throws ErrorPersistenciaException {
+		if (gastos == null) {
+			getGastos();
+		}
 		// La modificación la hacemos en el controladorGastos
 		try {
 			guardarGastos(gastos, rutaFichero);
@@ -171,42 +179,6 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 		}
 	}
 	
-	@Override
-	public void addCuenta(CuentaCompartida cuenta) {
-		//TODO hacer persistencia
-		if(!cuentas.contains(cuenta)) {
-			cuentas.add(cuenta);
-		}
-	}
 	
-	@Override
-	public List<CuentaCompartida> getCuentas(){
-		//TODO persistencia
-		return cuentas;
-	}
-	
-	@Override
-	public List<Usuario> getUsuarios(){
-		//TODO persistencia
-		return usuarios;
-	}
-	
-	@Override
-	public Usuario getUsuario(String nombre) {
-		//TODO persistencia
-		Usuario usuario = null;
-		for(Usuario u : usuarios) {
-			if(u.getId().equals(nombre)) {
-				usuario = u;
-			}
-		}
-		return usuario;
-	}
-	
-	@Override
-	public void addUsuario(Usuario u) {
-		//TODO persistencia
-		usuarios.add(u);
-	}
 
 }

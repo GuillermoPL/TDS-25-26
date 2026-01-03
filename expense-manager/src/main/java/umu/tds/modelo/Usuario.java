@@ -16,6 +16,10 @@ public class Usuario {
 	public String getId() {
 		return id;
 	}
+	
+	public void setId(String user_id) {
+		this.id = user_id;
+	}
 
 	@Override
 	public String toString() {
@@ -32,5 +36,9 @@ public class Usuario {
 			return false;
 		Usuario other = (Usuario) obj;
 		return id.equals(other.id);
+	}
+
+	public boolean isUsuario(String nombre) {
+		return this.id.equals(nombre);
 	}
 }
