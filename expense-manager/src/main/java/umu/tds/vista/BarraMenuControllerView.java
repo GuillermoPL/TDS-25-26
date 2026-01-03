@@ -35,7 +35,21 @@ public class BarraMenuControllerView implements IObservador {
             });
         }
     }
+    @FXML
+    private void salir() {
+        // Cerramos la aplicación de forma limpia
+        System.exit(0);
+    }
 
+    @FXML
+    private void abrirAcerca() {
+        // Si aún no tienes el diálogo hecho, puedes mostrar una alerta simple
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Acerca de");
+        alert.setHeaderText("ExpenseManager v1.0");
+        alert.setContentText("Desarrollado para la asignatura TDS.\nUniversidad de Murcia.");
+        alert.showAndWait();
+    }
     // Métodos de navegación que ya teníamos...
     @FXML private void irAGastos() { Configuracion.getInstancia().getSceneManager().showGastos(); }
     @FXML private void irAAlertas() { Configuracion.getInstancia().getSceneManager().showAlertas(); }
