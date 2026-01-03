@@ -13,6 +13,7 @@
                     <items>
                         <MenuItem mnemonicParsing="false" onAction="#irAGastos" text="Mis Gastos" />
                         <MenuItem mnemonicParsing="false" onAction="#irACategorias" text="Categorías" />
+                        <MenuItem mnemonicParsing="false" onAction="#irAAlertas" text="Alertas" />
                         <MenuItem mnemonicParsing="false" onAction="#salir" text="Salir" />
                     </items>
                 </Menu>

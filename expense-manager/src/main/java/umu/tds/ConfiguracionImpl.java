@@ -2,16 +2,17 @@ package umu.tds;
 
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.adapters.repository.impl.RepositorioGastosJSON;
+import umu.tds.adapters.repository.impl.RepositorioAlertasJSON;
 import umu.tds.adapters.repository.impl.RepositorioCuentasJSON;
 
 public class ConfiguracionImpl extends Configuracion {
     private ControladorAppGastos controlador;
 
     public ConfiguracionImpl() {
-        // Inyectamos los repositorios concretos al controlador
         this.controlador = new ControladorAppGastos(
             new RepositorioGastosJSON(), 
-            new RepositorioCuentasJSON()
+            new RepositorioCuentasJSON(),
+            new RepositorioAlertasJSON()
         );
     }
 

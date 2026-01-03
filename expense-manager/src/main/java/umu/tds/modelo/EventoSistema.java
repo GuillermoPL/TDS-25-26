@@ -6,5 +6,6 @@ public enum EventoSistema {
     GASTO_MODIFICADO, 
     NUEVA_CATEGORIA,
     NUEVA_ALERTA,
+    ALERTA_DISPARADA,
     SALDO_ACTUALIZADO
 }

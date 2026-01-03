@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import java.time.LocalDate;
 
 import umu.tds.Configuracion;
+import umu.tds.adapters.repository.RepositorioAlertas;
 import umu.tds.adapters.repository.RepositorioCuentas;
 import umu.tds.adapters.repository.RepositorioGastos;
 import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
@@ -20,6 +21,8 @@ import umu.tds.modelo.CuentaCompartida;
 import umu.tds.modelo.EstrategiaReparto;
 import umu.tds.modelo.FactoriaEstrategia;
 import umu.tds.modelo.Gasto;
+import umu.tds.modelo.IEstrategiaAlerta;
+import umu.tds.modelo.Alerta;
 import umu.tds.modelo.Categoria;
 import umu.tds.modelo.EventoSistema;
 import umu.tds.vista.IObservador;
@@ -30,11 +33,13 @@ import umu.tds.modelo.Usuario;
 public class ControladorAppGastos {
     private RepositorioGastos repoGastos;
     private RepositorioCuentas repoCuentas;
+    private RepositorioAlertas repoAlertas;
     private List<IObservador> observadores = new LinkedList<>();
     // Constructor
-    public ControladorAppGastos(RepositorioGastos repoGastos, RepositorioCuentas repoCuentas) {
+    public ControladorAppGastos(RepositorioGastos repoGastos, RepositorioCuentas repoCuentas, RepositorioAlertas repoAlertas) {
         this.repoGastos = repoGastos;
         this.repoCuentas = repoCuentas;
+        this.repoAlertas = repoAlertas;
     }
 	
     public List<CuentaCompartida> getCuentasCompartidas() {
@@ -47,6 +52,34 @@ public class ControladorAppGastos {
                 .collect(Collectors.toList());
     }
     
+    public void crearAlerta(double limite, String periodo) {
+        try {
+            // 1. Crear estrategia mediante la factoría
+            IEstrategiaAlerta est = FactoriaEstrategia.getInstancia().crearEstrategiaAlerta(periodo);
+            
+            // 2. Crear y persistir la alerta
+            Alerta nueva = new Alerta(limite, est);
+            repoAlertas.addAlerta(nueva);
+            
+            // 3. Notificar para refrescar la lista en la vista de Alertas
+            this.notificarCambio(EventoSistema.NUEVA_ALERTA, nueva);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void eliminarAlerta(Alerta alerta) {
+        try {
+            repoAlertas.removeAlerta(alerta);
+            this.notificarCambio(EventoSistema.NUEVA_ALERTA, null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<Alerta> getAlertas() {
+        return repoAlertas.getAlertas();
+    }
 	//gestion de la lista
 	// Métodos para gestionar la lista
     public void registrarObservador(IObservador obs) {
@@ -116,6 +149,17 @@ public class ControladorAppGastos {
 		}   
 	}
 	
+	private void verificarAlertas() {
+	    List<Gasto> todos = repoGastos.getGastos();
+	    for (Alerta alerta : repoAlertas.getAlertas()) {
+	        // Usamos el método que ya tienes en tu clase Alerta
+	        if (alerta.verificarSiSuperada(todos)) {
+	            // Si se supera, disparamos el evento global
+	            this.notificarCambio(EventoSistema.ALERTA_DISPARADA, alerta);
+	        }
+	    }
+	}
+	
 	public List<String> getNombreCategorias() {
 	    return repoGastos.getGastos().stream()
 	            .map(gasto -> gasto.getCategoria().toString()) // Usa tu toString() que devuelve el id
@@ -159,6 +203,7 @@ public class ControladorAppGastos {
 	        System.err.println("Error inesperado: " + e.getMessage());
 	        e.printStackTrace();
 	    }
+	    verificarAlertas();
 	}
 	public void registrarCategoria(String nombre) throws ElementoExistenteException {
 	    // 1. Validar si ya existe (Criterio de Aceptación HU 1.2) 
