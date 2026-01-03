@@ -234,6 +234,7 @@ public class ControladorAppGastos {
 	        // El objeto ya viene modificado de la vista (gracias al setGasto del controller)
 	        repoGastos.updateGasto(gasto); 
 	        this.notificarCambio(EventoSistema.GASTO_MODIFICADO, gasto);
+	        verificarAlertas();
 	    } catch (ErrorPersistenciaException e) {
 	        e.printStackTrace();
 	    }
