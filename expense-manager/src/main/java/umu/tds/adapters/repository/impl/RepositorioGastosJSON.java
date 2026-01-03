@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,7 +22,10 @@ import umu.tds.Configuracion;
 import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
 import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
 import umu.tds.adapters.repository.RepositorioGastos;
+import umu.tds.modelo.Categoria;
+import umu.tds.modelo.CuentaCompartida;
 import umu.tds.modelo.Gasto;
+import umu.tds.modelo.Usuario;
 
 public class RepositorioGastosJSON implements RepositorioGastos {
 
@@ -29,6 +33,8 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 
 	private List<Gasto> gastos = null;
 	private String rutaFichero;
+	private List<CuentaCompartida> cuentas = null;
+	private List<Usuario> usuarios = null;
 
 	private void cargaGastos() throws ErrorPersistenciaException {
 		try {
@@ -39,7 +45,7 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 			throw new ErrorPersistenciaException(e);
 		}
 	}
-
+	
 	private List<Gasto> cargarGastos(String rutaFichero)
 			throws StreamReadException, DatabindException, IOException {
 
@@ -64,14 +70,20 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 			try {
 				cargaGastos();
 			} catch (ErrorPersistenciaException e) {
-				// Manejo la excepcion pero no la propago porque en este sitio es donde se puede
-				// gestionar mejor
+				// Manejo la excepcion y la propago como Excepcion en Tiempo de Ejecución.
 				log.error("No se han podido cargar los gastos ", e);
 				throw new RuntimeException(
 						"CRITICAL_LOAD_ERROR: No se pudo cargar el fichero de gastos.", e);
 			}
 		}
 		return gastos;
+	}
+	
+	@Override
+	public List<Gasto> getGastosPorCategoria(Categoria categoria){
+		return getGastos().stream()
+							.filter(g -> g.isCategoria(categoria))
+							.collect(Collectors.toList());
 	}
 
 
@@ -157,6 +169,44 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 			log.error("Error persistiendo en fichero", e);
 			throw e;
 		}
+	}
+	
+	@Override
+	public void addCuenta(CuentaCompartida cuenta) {
+		//TODO hacer persistencia
+		if(!cuentas.contains(cuenta)) {
+			cuentas.add(cuenta);
+		}
+	}
+	
+	@Override
+	public List<CuentaCompartida> getCuentas(){
+		//TODO persistencia
+		return cuentas;
+	}
+	
+	@Override
+	public List<Usuario> getUsuarios(){
+		//TODO persistencia
+		return usuarios;
+	}
+	
+	@Override
+	public Usuario getUsuario(String nombre) {
+		//TODO persistencia
+		Usuario usuario = null;
+		for(Usuario u : usuarios) {
+			if(u.getId().equals(nombre)) {
+				usuario = u;
+			}
+		}
+		return usuario;
+	}
+	
+	@Override
+	public void addUsuario(Usuario u) {
+		//TODO persistencia
+		usuarios.add(u);
 	}
 
 }
