@@ -1,38 +1,22 @@
 package umu.tds;
 
 import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.VBox;
-import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
+import umu.tds.vista.SceneManager;
+import umu.tds.modelo.Usuario;
+import umu.tds.controlador.ControladorSesion; 
 
 public class App extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        // Nodos hoja (controles)
-        Label etiqueta = new Label("Nombre:");
-        TextField campoTexto = new TextField();
-        Button botonAceptar = new Button("Aceptar");
-        //prueba
-        // Contenedor horizontal para la etiqueta y el campo de texto
-        HBox hbox = new HBox(10); 
-        hbox.getChildren().addAll(etiqueta, campoTexto);
+    	Usuario userTest = new Usuario("PedroF");
+    	ControladorSesion.getInstancia().setUsuarioActual(userTest);
+        //1. Vinculamos el Stage principal con nuestro SceneManager (Singleton)
+        SceneManager.getInstancia().setStage(primaryStage);
 
-        // Contenedor vertical que contiene el HBox y el botón
-        VBox vbox = new VBox(15); 
-        vbox.getChildren().addAll(hbox, botonAceptar);
-
-        // Crear la escena con el nodo raíz (vbox)
-        Scene escena = new Scene(vbox, 300, 150);
-
-        // Configurar y mostrar el Stage principal
-        primaryStage.setTitle("Ejemplo de Scene Graph");
-        primaryStage.setScene(escena);
-        primaryStage.show();
+        //2. Cargamos la vista inicial usando el archivo FXML de resources
+        SceneManager.getInstancia().cambiarEscena("/umu/tds/App.fxml", "Gestión de Gastos - TDS");
     }
 
     public static void main(String[] args) {

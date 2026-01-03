@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<?import javafx.scene.layout.BorderPane?>
-
-<BorderPane xmlns:fx="http://javafx.com/fxml/1">
-	<!-- TODO Add Nodes -->
+<BorderPane prefHeight="600.0" prefWidth="800.0" xmlns:fx="http://javafx.com/fxml/1" fx:controller="umu.tds.vista.AppController">
+   <left>
+      <VBox spacing="10" style="-fx-padding: 10; -fx-background-color: #f4f4f4;">
+         <children>
+            <Label text="MENÚ" style="-fx-font-weight: bold;" />
+            <Button fx:id="btnGastos" maxWidth="Infinity" text="Mis Gastos" onAction="#mostrarGastos"/>
+            <Button fx:id="btnEstadisticas" maxWidth="Infinity" text="Estadísticas" onAction="#mostrarEstadisticas"/>
+            <Button fx:id="btnCuentas" maxWidth="Infinity" text="Cuentas Compartidas" onAction="#mostrarCuentas"/>
+            <Button fx:id="btnAlertas" maxWidth="Infinity" text="Alertas" onAction="#mostrarAlertas"/>
+         </children>
+      </VBox>
+   </left>
+   <center>
+      <StackPane fx:id="contenedorPrincipal" />
+   </center>
 </BorderPane>
-

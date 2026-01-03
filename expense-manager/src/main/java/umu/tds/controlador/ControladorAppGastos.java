@@ -2,31 +2,34 @@ package umu.tds.controlador;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
 
 import umu.tds.Configuracion;
 import umu.tds.adapters.repository.RepositorioGastos;
 import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
 import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
+
 import umu.tds.modelo.CuentaCompartida;
 import umu.tds.modelo.EstrategiaReparto;
 import umu.tds.modelo.FactoriaEstrategia;
 import umu.tds.modelo.Gasto;
+import umu.tds.modelo.Categoria;
+import umu.tds.modelo.EventoSistema;
+import umu.tds.vista.IObservador;
 import umu.tds.modelo.Usuario;
-
-//importacion de las clases del paquete modelo. asi como de utilidades java.
-
 
 
 //PATRON SINGLETON
 public class ControladorAppGastos {
 	private static ControladorAppGastos unicaInstancia;
     private RepositorioGastos repositorio;
-    
+    private List<IObservador> observadores = new LinkedList<>();
     // Constructor privado
     private ControladorAppGastos() {
         this.repositorio = Configuracion.getInstancia().getRepositorioGastos();
@@ -39,6 +42,16 @@ public class ControladorAppGastos {
         return unicaInstancia;
     }
 	
+	
+	//gestion de la lista
+	// Métodos para gestionar la lista
+    public void registrarObservador(IObservador obs) {
+        observadores.add(obs);
+    }
+
+    public void eliminarObservador(IObservador obs) {
+        observadores.remove(obs);
+    }
 	//Devuelve gastos que pasan un filtro o varios
 	public List<Gasto> getGastosPorCondicion(Predicate<Gasto> condicion) {
 		List<Gasto> gastos = repositorio.getGastos();
@@ -91,5 +104,63 @@ public class ControladorAppGastos {
 		} catch (ErrorPersistenciaException e) {
 			e.printStackTrace();
 		}
+	public List<String> getNombreCategorias() {
+	    return repositorio.getGastos().stream()
+	            .map(gasto -> gasto.getCategoria().toString()) // Usa tu toString() que devuelve el id
+	            .distinct()
+	            .sorted()
+	            .collect(Collectors.toList());
+	}
+	
+	private void notificarCambio(EventoSistema evento, Object datos) {
+        observadores.forEach(obs -> obs.actualizar(evento, datos));
+    }
+	public void registrarGasto(double importe, LocalDate fecha, String nombreCat) {
+	    try {
+	        // 1. Obtenemos el usuario de la sesión (Imprescindible para el modelo)
+	        Usuario pagador = ControladorSesion.getInstancia().getUsuarioActual();
+	        
+	        if (pagador == null) {
+	            throw new RuntimeException("Error: No hay una sesión de usuario activa.");
+	        }
+
+	        // 2. Preparamos los datos
+	        String id = "G-" + System.currentTimeMillis();
+	        Categoria cat = new Categoria(nombreCat);
+	        
+	        // 3. Creamos el objeto con su pagador real
+	        Gasto nuevo = new Gasto(id, importe, fecha, cat, pagador); 
+
+	        // 4. Persistencia
+	        repositorio.addGasto(nuevo);
+
+	        // 5. Notificación (Magia del patrón Observador)
+	        this.notificarCambio(EventoSistema.NUEVO_GASTO, nuevo);
+	        
+	    } catch (umu.tds.adapters.repository.exceptions.ElementoExistenteException e) {
+	        System.err.println("Error: El ID del gasto ya existe.");
+	        e.printStackTrace();
+	    } catch (umu.tds.adapters.repository.exceptions.ErrorPersistenciaException e) {
+	        System.err.println("Error crítico al guardar en el archivo JSON.");
+	        e.printStackTrace();
+	    } catch (Exception e) {
+	        System.err.println("Error inesperado: " + e.getMessage());
+	        e.printStackTrace();
+	    }
+	}
+	public void registrarCategoria(String nombre) throws ElementoExistenteException {
+	    // 1. Validar si ya existe (Criterio de Aceptación HU 1.2) 
+	    List<String> existentes = getNombreCategorias();
+	    if (existentes.contains(nombre)) {
+	        throw new ElementoExistenteException("La categoría '" + nombre + "' ya existe.");
+	    }
+
+	    // 2. Crear y persistir
+	    // Nota: Aquí podrías añadir un método addCategoria a tu RepositorioGastos 
+	    // o simplemente crear un gasto ficticio/inicial para que Jackson la registre
+	    Categoria nueva = new Categoria(nombre);
+	    
+	    // 3. Notificar a las vistas para que actualicen sus ComboBox
+	    this.notificarCambio(EventoSistema.NUEVA_CATEGORIA, nueva);
 	}
 }
