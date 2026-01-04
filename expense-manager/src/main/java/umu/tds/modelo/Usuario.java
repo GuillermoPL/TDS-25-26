@@ -1,5 +1,6 @@
 package umu.tds.modelo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Usuario {
@@ -42,6 +43,7 @@ public class Usuario {
 		return this.id.equals(nombre);
 	}
 	
+	@JsonIgnore
 	public String getLogin() {
 	    return this.id; 
 	}

@@ -5,6 +5,8 @@ import java.util.Map;
 public class RepartoPorcentual implements EstrategiaReparto {
 	private Map<Usuario, Double> porcentajes;
 	
+	public RepartoPorcentual() {}
+	
 	public RepartoPorcentual(Map<Usuario, Double> porcentajes) {
 		this.porcentajes = porcentajes;
 	}

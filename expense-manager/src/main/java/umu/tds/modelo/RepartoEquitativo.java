@@ -4,6 +4,9 @@ import java.util.Map;
 
 public class RepartoEquitativo implements EstrategiaReparto {
 
+	
+	public RepartoEquitativo() {}
+	
 	@Override
 	public void calcular(Gasto nuevoGasto, Map<Usuario, Double> saldosActuales) {
 		// 1. Obtener los datos básicos del gasto
