@@ -34,5 +34,10 @@ public class RepartoEquitativo implements EstrategiaReparto {
             }
         }
 	}
+	
+	@Override
+	public boolean esSumaValida() {
+		return true;
+	}
 
 }
