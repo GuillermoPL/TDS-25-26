@@ -54,16 +54,22 @@ public class ControladorAppGastos {
                 .collect(Collectors.toList());
     }
     
-    public void crearAlerta(double limite, String periodo) {
+    public void crearAlerta(double limite, String periodo, String nombreCategoria) {
         try {
             // 1. Crear estrategia mediante la factoría
             IEstrategiaAlerta est = FactoriaEstrategia.getInstancia().crearEstrategiaAlerta(periodo);
             
-            // 2. Crear y persistir la alerta
-            Alerta nueva = new Alerta(limite, est);
-            repoAlertas.addAlerta(nueva);
+            // 2. Determinar si hay categoría específica
+            Alerta nueva;
+            if (nombreCategoria == null) {
+                nueva = new Alerta(limite, est);
+            } else {
+                Categoria cat = new Categoria(nombreCategoria);
+                nueva = new Alerta(limite, est, cat);
+            }
             
-            // 3. Notificar para refrescar la lista en la vista de Alertas
+            // 3. Persistir y notificar
+            repoAlertas.addAlerta(nueva);
             this.notificarCambio(EventoSistema.NUEVA_ALERTA, nueva);
         } catch (Exception e) {
             e.printStackTrace();
@@ -157,13 +163,14 @@ public class ControladorAppGastos {
 		return cuenta.getSaldosPorUsuario();
 	}
 	
-	private void verificarAlertas() {
+	private void verificarAlertas(Gasto ultimoGasto) {
 	    List<Gasto> todos = repoGastos.getGastos();
 	    for (Alerta alerta : repoAlertas.getAlertas()) {
-	        // Usamos el método que ya tienes en tu clase Alerta
-	        if (alerta.verificarSiSuperada(todos)) {
-	            // Si se supera, disparamos el evento global
-	            this.notificarCambio(EventoSistema.ALERTA_DISPARADA, alerta);
+	        // Solo verificamos alertas globales o de la categoría del gasto actual
+	        if (alerta.getCategoria() == null || alerta.getCategoria().equals(ultimoGasto.getCategoria())) {
+	            if (alerta.verificarSiSuperada(todos)) {
+	                this.notificarCambio(EventoSistema.ALERTA_DISPARADA, alerta);
+	            }
 	        }
 	    }
 	}
@@ -202,6 +209,7 @@ public class ControladorAppGastos {
 	        // 5. Notificación (Magia del patrón Observador)
 	        this.notificarCambio(EventoSistema.NUEVO_GASTO, nuevo);
 	        
+	        verificarAlertas(nuevo);
 	    } catch (umu.tds.adapters.repository.exceptions.ElementoExistenteException e) {
 	        System.err.println("Error: El ID del gasto ya existe.");
 	        e.printStackTrace();
@@ -212,7 +220,6 @@ public class ControladorAppGastos {
 	        System.err.println("Error inesperado: " + e.getMessage());
 	        e.printStackTrace();
 	    }
-	    verificarAlertas();
 	}
 	public void registrarCategoria(String nombre) throws ElementoExistenteException {
 	    List<String> existentes = getNombreCategorias();
@@ -239,7 +246,7 @@ public class ControladorAppGastos {
 	        // El objeto ya viene modificado de la vista (gracias al setGasto del controller)
 	        repoGastos.updateGasto(gasto); 
 	        this.notificarCambio(EventoSistema.GASTO_MODIFICADO, gasto);
-	        verificarAlertas();
+	        verificarAlertas(gasto);
 	    } catch (ErrorPersistenciaException e) {
 	        e.printStackTrace();
 	    }
