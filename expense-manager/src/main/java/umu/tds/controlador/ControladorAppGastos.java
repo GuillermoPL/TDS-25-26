@@ -22,6 +22,7 @@ import umu.tds.modelo.EstrategiaReparto;
 import umu.tds.modelo.FactoriaEstrategia;
 import umu.tds.modelo.Gasto;
 import umu.tds.modelo.IEstrategiaAlerta;
+import umu.tds.modelo.RepartoPorcentual;
 import umu.tds.modelo.Alerta;
 import umu.tds.modelo.Categoria;
 import umu.tds.modelo.EventoSistema;
@@ -105,33 +106,41 @@ public class ControladorAppGastos {
 	    Map<Usuario, Double> porcentajesUsuarios = null;
 	    Set<Usuario> usuarios = new HashSet<>();
 	    
-	    // 1. Obtenemos los objetos Usuario a partir de los logins de la vista
+	    // 1. Obtenemos los objetos Usuario y rellenamos el mapa local
 	    for (String login : datosVista.keySet()) {
 	        Usuario u = repoCuentas.getUsuario(login);
 	        if (u == null) {
 	            u = new Usuario(login); 
-	            // Aquí ya no marcará error porque el método propaga la excepción
 	            repoCuentas.addUsuario(u); 
 	        }
 	        usuarios.add(u); 
 	        
-	        // 2. Solo si es porcentual, también llenamos el mapa de porcentajes
 	        if (tipoEstrategia.equalsIgnoreCase("PORCENTUAL")) {
 	            if (porcentajesUsuarios == null) porcentajesUsuarios = new HashMap<>();
 	            porcentajesUsuarios.put(u, datosVista.get(login));
 	        }
 	    }
 
-	    // 3. Usamos la factoría para obtener la estrategia de reparto (Patrón Estrategia)
+	    // 2. VALIDACIÓN: Usamos el mapa local antes de crear nada
+	    if (tipoEstrategia.equalsIgnoreCase("PORCENTUAL") && porcentajesUsuarios != null) {
+	        // Calculamos la suma usando el Collector sobre nuestro mapa local
+	        double suma = porcentajesUsuarios.values().stream()
+	                        .collect(Collectors.summingDouble(Double::doubleValue));
+	        
+	        // Comprobamos el margen de error (Épsilon)
+	        if (Math.abs(suma - 100.0) >= 0.01) {
+	            throw new IllegalArgumentException("La suma de los porcentajes debe ser exactamente 100% (Suma actual: " + suma + "%)");
+	        }
+	    }
+
+	    // 3. Si es válida, procedemos a crear la estrategia y la cuenta
 	    EstrategiaReparto estrategia = FactoriaEstrategia.getInstancia()
 	                                    .crearEstrategia(tipoEstrategia, porcentajesUsuarios);
 
-	    // 4. Creamos e inscribimos la cuenta
 	    CuentaCompartida nuevaCuenta = new CuentaCompartida(estrategia, usuarios);
 	    repoCuentas.addCuenta(nuevaCuenta);
 	    
-	    // 5. IMPORTANTE: Notificar a los observadores que hay una nueva cuenta
-	    // para que la UI se actualice (HU 4.1)
+	    // 4. Notificamos el cambio para actualizar la UI
 	    this.notificarCambio(EventoSistema.SALDO_ACTUALIZADO, nuevaCuenta);
 	}
 	
