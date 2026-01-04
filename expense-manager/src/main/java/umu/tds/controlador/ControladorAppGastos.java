@@ -135,7 +135,7 @@ public class ControladorAppGastos {
 	    repoCuentas.addCuenta(nuevaCuenta);
 	    
 	    // 5. Notificamos el cambio para actualizar la UI
-	    this.notificarCambio(EventoSistema.SALDO_ACTUALIZADO, nuevaCuenta);
+	    this.notificarCambio(EventoSistema.NUEVA_CUENTA, nuevaCuenta);
 	}
 	
 	//Registra un gasto en una CuentaCompartida
@@ -151,6 +151,10 @@ public class ControladorAppGastos {
 		} catch (ErrorPersistenciaException e) {
 			e.printStackTrace();
 		}   
+	}
+	
+	public Map<Usuario, Double> getSaldosPorUsuarioCuenta(CuentaCompartida cuenta){
+		return cuenta.getSaldosPorUsuario();
 	}
 	
 	private void verificarAlertas() {

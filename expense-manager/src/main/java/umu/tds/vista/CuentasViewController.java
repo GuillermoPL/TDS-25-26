@@ -87,8 +87,11 @@ public class CuentasViewController implements IObservador {
         try {
             Configuracion.getInstancia().getControladorAppGastos()
                 .crearCuentaCompartida(nombre, estrategia, datosParaControlador);
+            
             handleLimpiar();
             mostrarInformacion("Éxito", "Cuenta compartida creada correctamente.");
+        } catch (IllegalArgumentException e) {
+            mostrarAlerta("Validación", e.getMessage());
         } catch (Exception e) {
             mostrarAlerta("Error", "No se pudo crear la cuenta: " + e.getMessage());
         }
@@ -109,7 +112,7 @@ public class CuentasViewController implements IObservador {
 
     @Override
     public void actualizar(EventoSistema evento, Object datos) {
-        if (evento == EventoSistema.SALDO_ACTUALIZADO) {
+        if (evento == EventoSistema.NUEVA_CUENTA || evento == EventoSistema.SALDO_ACTUALIZADO) {
             javafx.application.Platform.runLater(() -> refrescarCuentas());
         }
     }
