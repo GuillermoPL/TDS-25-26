@@ -1,6 +1,7 @@
 package umu.tds.modelo;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class RepartoPorcentual implements EstrategiaReparto {
 	private Map<Usuario, Double> porcentajes;
@@ -35,5 +36,6 @@ public class RepartoPorcentual implements EstrategiaReparto {
         }
 
 	}
+	
 
 }
