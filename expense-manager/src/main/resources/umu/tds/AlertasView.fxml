@@ -32,6 +32,14 @@
                         <ComboBox fx:id="cbPeriodo" prefWidth="150.0" />
                      </children>
                   </VBox>
+                  
+                  <VBox spacing="5.0">
+                     <children>
+                        <Label text="Categoría:" />
+                        <ComboBox fx:id="cbCategoria" prefWidth="150.0" />
+                     </children>
+                  </VBox>
+
                   <Button onAction="#handleCrearAlerta" style="-fx-background-color: #2196f3; -fx-text-fill: white;" text="Establecer Alerta">
                      <HBox.margin>
                         <Insets top="20.0" />

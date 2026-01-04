@@ -68,7 +68,8 @@ public class Alerta {
     @Override
     public String toString() {
         String periodo = (estrategia instanceof EstrategiaAlertaSemanal) ? "Semanal" : "Mensual";
-        return String.format("Límite: %.2f€ | Periodo: %s", limite, periodo);
+        String textoCat = (categoria == null) ? "Todas" : categoria.toString();
+        return String.format("Límite: %.2f€ | Periodo: %s | Cat: %s", limite, periodo, textoCat);
     }
     
 }
