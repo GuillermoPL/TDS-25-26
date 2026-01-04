@@ -100,7 +100,7 @@ public class ControladorAppGastos {
 	}
 	
 	// Añadimos las excepciones a la firma del método
-	public void crearCuentaCompartida(String tipoEstrategia, Map<String, Double> datosVista) 
+	public void crearCuentaCompartida(String nombre, String tipoEstrategia, Map<String, Double> datosVista) 
 	        throws ElementoExistenteException, ErrorPersistenciaException {
 	    
 	    Map<Usuario, Double> porcentajesUsuarios = null;
@@ -137,7 +137,7 @@ public class ControladorAppGastos {
 	    EstrategiaReparto estrategia = FactoriaEstrategia.getInstancia()
 	                                    .crearEstrategia(tipoEstrategia, porcentajesUsuarios);
 
-	    CuentaCompartida nuevaCuenta = new CuentaCompartida(estrategia, usuarios);
+	    CuentaCompartida nuevaCuenta = new CuentaCompartida(nombre, estrategia, usuarios);
 	    repoCuentas.addCuenta(nuevaCuenta);
 	    
 	    // 4. Notificamos el cambio para actualizar la UI
