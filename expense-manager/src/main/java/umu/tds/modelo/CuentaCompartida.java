@@ -10,6 +10,8 @@ public class CuentaCompartida {
 	private Map<Usuario, Double> saldosPorUsuario;
 	private EstrategiaReparto estrategia;
 	
+	public CuentaCompartida() {}
+	
 	public CuentaCompartida(EstrategiaReparto estrategia, Set<Usuario> usuarios) {
 		this.estrategia = estrategia;
 		this.saldosPorUsuario = new HashMap<Usuario, Double>();
@@ -19,9 +21,17 @@ public class CuentaCompartida {
 	}
 	
 	public Map<Usuario, Double> getSaldosPorUsuario(){
-		return new HashMap<Usuario, Double>(saldosPorUsuario);
+		return saldosPorUsuario;
 	}
 	
+	public void setSaldosPorUsuario(Map<Usuario, Double> saldosPorUsuario) {
+		this.saldosPorUsuario = saldosPorUsuario;
+	}
+
+	public void setEstrategia(EstrategiaReparto estrategia) {
+		this.estrategia = estrategia;
+	}
+
 	public EstrategiaReparto getEstrategia() {
 		return estrategia;
 	}

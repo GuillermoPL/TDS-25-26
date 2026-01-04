@@ -34,8 +34,8 @@ public class CuentasViewController implements IObservador {
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
         ctrl.registrarObservador(this);
 
-        cbEstrategia.getItems().addAll("EQUIVALENTE", "PORCENTUAL");
-        cbEstrategia.setValue("EQUIVALENTE");
+        cbEstrategia.getItems().addAll("EQUITATIVO", "PORCENTUAL");
+        cbEstrategia.setValue("EQUITATIVO");
 
         // CONFIGURACIÓN DE COLUMNAS
         // Usamos PropertyValueFactory que busca los métodos 'getLogin' y 'getPorcentaje'
