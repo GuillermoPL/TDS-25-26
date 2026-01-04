@@ -82,9 +82,11 @@ public class NuevoGastoController {
     }
 
     private void cerrarVentana() {
-        // Al usar DialogPane, obtenemos la Window genérica para cerrar el diálogo
-        Window window = txtImporte.getScene().getWindow();
-        window.hide(); // hide() es más seguro que close() dentro de un Dialog de JavaFX
+        // 1. Obtenemos el Stage (ventana) a través de cualquier componente, por ejemplo el TextField
+        javafx.stage.Stage stage = (javafx.stage.Stage) txtImporte.getScene().getWindow();
+        
+        // 2. Usamos close() que es la forma estándar de cerrar una ventana hija
+        stage.close(); 
     }
 
     private void mostrarAlerta(String titulo, String mensaje) {
