@@ -2,8 +2,10 @@ package umu.tds.vista;
 
 import java.io.IOException;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.stage.Stage;
@@ -60,6 +62,19 @@ public class SceneManager {
             dialog.setDialogPane(pane);
             dialog.setTitle(titulo);
             dialog.initStyle(StageStyle.UTILITY);
+
+            // --- CAMBIO PARA ACTIVAR LA CRUZ ---
+            // 1. Añadimos el tipo de botón CLOSE para habilitar la cruz del sistema
+            pane.getButtonTypes().add(ButtonType.CLOSE);
+
+            // 2. Opcional: Ocultamos el botón físico que aparece abajo para mantener la estética
+            Node closeButton = pane.lookupButton(ButtonType.CLOSE);
+            if (closeButton != null) {
+                closeButton.setVisible(false);
+                closeButton.setManaged(false); // Evita que ocupe espacio en el layout
+            }
+            // ------------------------------------
+
             dialog.showAndWait();
         } catch (IOException e) {
             throw new RuntimeException("Error al cargar el diálogo: " + fxml, e);
