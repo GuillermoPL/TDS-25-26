@@ -37,5 +37,11 @@ public class RepartoPorcentual implements EstrategiaReparto {
 
 	}
 	
+	@Override
+	public boolean esSumaValida() {
+	    double suma = porcentajes.values().stream()
+	                 .collect(Collectors.summingDouble(Double::doubleValue));
+	    return Math.abs(suma - 100.0) < 0.01;
+	}
 
 }

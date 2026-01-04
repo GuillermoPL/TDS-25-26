@@ -106,7 +106,7 @@ public class ControladorAppGastos {
 	    Map<Usuario, Double> porcentajesUsuarios = null;
 	    Set<Usuario> usuarios = new HashSet<>();
 	    
-	    // 1. Obtenemos los objetos Usuario y rellenamos el mapa local
+	    // 1. Obtenemos los objetos Usuario y preparamos los datos
 	    for (String login : datosVista.keySet()) {
 	        Usuario u = repoCuentas.getUsuario(login);
 	        if (u == null) {
@@ -121,26 +121,20 @@ public class ControladorAppGastos {
 	        }
 	    }
 
-	    // 2. VALIDACIÓN: Usamos el mapa local antes de crear nada
-	    if (tipoEstrategia.equalsIgnoreCase("PORCENTUAL") && porcentajesUsuarios != null) {
-	        // Calculamos la suma usando el Collector sobre nuestro mapa local
-	        double suma = porcentajesUsuarios.values().stream()
-	                        .collect(Collectors.summingDouble(Double::doubleValue));
-	        
-	        // Comprobamos el margen de error (Épsilon)
-	        if (Math.abs(suma - 100.0) >= 0.01) {
-	            throw new IllegalArgumentException("La suma de los porcentajes debe ser exactamente 100% (Suma actual: " + suma + "%)");
-	        }
-	    }
-
-	    // 3. Si es válida, procedemos a crear la estrategia y la cuenta
+	    // 2. Creamos la estrategia usando la factoría
 	    EstrategiaReparto estrategia = FactoriaEstrategia.getInstancia()
 	                                    .crearEstrategia(tipoEstrategia, porcentajesUsuarios);
 
+	    // 3. Delegamos totalmente en el objeto estrategia
+	    if (!estrategia.esSumaValida()) {
+	        throw new IllegalArgumentException("La configuración del reparto no es válida (los porcentajes deben sumar 100%).");
+	    }
+
+	    // 4. Creamos la cuenta y persistimos
 	    CuentaCompartida nuevaCuenta = new CuentaCompartida(nombre, estrategia, usuarios);
 	    repoCuentas.addCuenta(nuevaCuenta);
 	    
-	    // 4. Notificamos el cambio para actualizar la UI
+	    // 5. Notificamos el cambio para actualizar la UI
 	    this.notificarCambio(EventoSistema.SALDO_ACTUALIZADO, nuevaCuenta);
 	}
 	

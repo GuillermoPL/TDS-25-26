@@ -63,7 +63,6 @@ public class SceneManager {
             dialog.setTitle(titulo);
             dialog.initStyle(StageStyle.UTILITY);
 
-            // --- CAMBIO PARA ACTIVAR LA CRUZ ---
             // 1. Añadimos el tipo de botón CLOSE para habilitar la cruz del sistema
             pane.getButtonTypes().add(ButtonType.CLOSE);
 
@@ -73,7 +72,6 @@ public class SceneManager {
                 closeButton.setVisible(false);
                 closeButton.setManaged(false); // Evita que ocupe espacio en el layout
             }
-            // ------------------------------------
 
             dialog.showAndWait();
         } catch (IOException e) {
