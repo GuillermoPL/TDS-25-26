@@ -23,7 +23,10 @@ public abstract class Configuracion {
     public abstract String getRutaCuentas();
     public abstract String getRutaUsuarios();
     public abstract String getRutaAlertas();
+	public abstract String getRutaNotificaciones();
     public SceneManager getSceneManager() {
         return sceneManager;
     }
+
+
 }
