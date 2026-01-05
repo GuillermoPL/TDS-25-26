@@ -21,6 +21,7 @@
                 <Menu mnemonicParsing="false" text="Visualización">
                     <items>
                         <MenuItem mnemonicParsing="false" onAction="#irAEstadisticas" text="Estadísticas" />
+                        <MenuItem mnemonicParsing="false" onAction="#irACalendario" text="Ver Calendario" />
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Ayuda">
