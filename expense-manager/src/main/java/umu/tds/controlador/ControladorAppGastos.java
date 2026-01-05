@@ -112,7 +112,6 @@ public class ControladorAppGastos {
 	    Map<Usuario, Double> porcentajesUsuarios = null;
 	    Set<Usuario> usuarios = new HashSet<>();
 	    
-	    // 1. Obtenemos los objetos Usuario y preparamos los datos
 	    for (String login : datosVista.keySet()) {
 	        Usuario u = repoCuentas.getUsuario(login);
 	        if (u == null) {
@@ -127,36 +126,50 @@ public class ControladorAppGastos {
 	        }
 	    }
 
-	    // 2. Creamos la estrategia usando la factoría
 	    EstrategiaReparto estrategia = FactoriaEstrategia.getInstancia()
-	                                    .crearEstrategia(tipoEstrategia, porcentajesUsuarios);
+	                                    .crearEstrategia(tipoEstrategia, porcentajesUsuarios, usuarios);
 
-	    // 3. Delegamos totalmente en el objeto estrategia
 	    if (!estrategia.esSumaValida()) {
-	        throw new IllegalArgumentException("La configuración del reparto no es válida (los porcentajes deben sumar 100%).");
+	        throw new IllegalArgumentException("La configuración del reparto no es válida.");
 	    }
 
-	    // 4. Creamos la cuenta y persistimos
 	    CuentaCompartida nuevaCuenta = new CuentaCompartida(nombre, estrategia, usuarios);
 	    repoCuentas.addCuenta(nuevaCuenta);
-	    
-	    // 5. Notificamos el cambio para actualizar la UI
 	    this.notificarCambio(EventoSistema.NUEVA_CUENTA, nuevaCuenta);
 	}
 	
 	//Registra un gasto en una CuentaCompartida
-	public void añadirGastoACuentaCompartida(Gasto gasto, CuentaCompartida cuenta) {
-	    // 1. Delegamos el cálculo a la cuenta (que ya tiene su estrategia)
-	    cuenta.calcularGasto(gasto);
-
-	    // 2. Guardamos el gasto en el repositorio para que persista
+	public void registrarGastoEnCuenta(double importe, LocalDate fecha, String nombreCat, String loginPagador, CuentaCompartida cuenta) {
 	    try {
-			repoGastos.addGasto(gasto);
-		} catch (ElementoExistenteException e) {
-			e.printStackTrace();
-		} catch (ErrorPersistenciaException e) {
-			e.printStackTrace();
-		}   
+	        // 1. Identificamos al usuario pagador real
+	        Usuario pagador = repoCuentas.getUsuario(loginPagador);
+	        
+	        // 2. Creamos el objeto Gasto
+	        String id = "G-COMP-" + System.currentTimeMillis();
+	        Categoria cat = new Categoria(nombreCat);
+	        Gasto nuevoGasto = new Gasto(id, importe, fecha, cat, pagador);
+
+	        // 3. Delegamos el cálculo a la cuenta (aplica su estrategia)
+	        cuenta.calcularGasto(nuevoGasto);
+
+	        // 4. Persistencia
+	        repoGastos.addGasto(nuevoGasto);
+	        
+	        // 5. Notificación para refrescar saldos en la UI
+	        this.notificarCambio(EventoSistema.SALDO_ACTUALIZADO, cuenta);
+	        
+	        // 6. Verificación de alertas globales
+	        verificarAlertas(nuevoGasto);
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	// En ControladorAppGastos.java
+	public Map<Usuario, Double> getPorcentajesUsuarioCuenta(CuentaCompartida cuenta) {
+	    // Delegamos en la cuenta
+	    return cuenta.getPorcentajesEstrategia();
 	}
 	
 	public Map<Usuario, Double> getSaldosPorUsuarioCuenta(CuentaCompartida cuenta){

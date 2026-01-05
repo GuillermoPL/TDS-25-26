@@ -54,6 +54,8 @@ public class CuentaCompartida {
 		this.nombre = nombre;
 	}
 	
-	
+	public Map<Usuario, Double> getPorcentajesEstrategia() {
+	    return estrategia.getPorcentajes(); 
+	}
 
 }

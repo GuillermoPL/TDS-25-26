@@ -25,7 +25,7 @@
 
             <VBox spacing="15.0" style="-fx-padding: 15;">
                <children>
-                  <Label text="Nueva Cuenta Compartida">
+                  <Label text="Gestión de Cuenta Compartida">
                      <font>
                         <Font name="System Bold" size="18.0" />
                      </font>
@@ -50,7 +50,7 @@
 
                   <Separator />
 
-                  <Label text="Miembros y Configuración" style="-fx-font-weight: bold;" />
+                  <Label style="-fx-font-weight: bold;" text="Miembros y Configuración" />
                   <HBox spacing="10.0">
                      <children>
                         <TextField fx:id="txtLoginUsuario" promptText="Login del usuario..." HBox.hgrow="ALWAYS" />
@@ -62,13 +62,15 @@
                     <columns>
                       <TableColumn fx:id="colUsuario" prefWidth="200.0" text="Usuario" />
                       <TableColumn fx:id="colPorcentaje" prefWidth="100.0" text="\% (Si aplica)" />
+                      <TableColumn fx:id="colSaldo" prefWidth="120.0" text="Saldo Actual (€)" />
                     </columns>
                   </TableView>
 
                   <HBox alignment="CENTER_RIGHT" spacing="10.0">
                      <children>
+                        <Button onAction="#handleRegistrarGastoEnCuenta" style="-fx-background-color: #2196f3; -fx-text-fill: white;" text="Registrar Gasto" />
                         <Button onAction="#handleLimpiar" text="Limpiar" />
-                        <Button onAction="#handleCrearCuenta" style="-fx-background-color: #4caf50; -fx-text-fill: white;" text="Crear Cuenta Compartida" />
+                        <Button onAction="#handleCrearCuenta" style="-fx-background-color: #4caf50; -fx-text-fill: white;" text="Crear Cuenta" />
                      </children>
                   </HBox>
                </children>

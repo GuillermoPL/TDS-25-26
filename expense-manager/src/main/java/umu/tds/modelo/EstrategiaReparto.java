@@ -14,4 +14,6 @@ public interface EstrategiaReparto {
 	public void calcular(Gasto nuevoGasto, Map<Usuario, Double> saldosActuales);
 	
 	public boolean esSumaValida();
+	
+	public Map<Usuario, Double> getPorcentajes();
 }

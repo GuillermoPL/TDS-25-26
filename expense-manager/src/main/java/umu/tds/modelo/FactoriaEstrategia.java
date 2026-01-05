@@ -1,6 +1,7 @@
 package umu.tds.modelo;
 
 import java.util.Map;
+import java.util.Set;
 
 public class FactoriaEstrategia {
 	// 1. Instancia única privada
@@ -18,17 +19,16 @@ public class FactoriaEstrategia {
     }
 
     // Método para crear la estrategia (Factory Method)
-    public EstrategiaReparto crearEstrategia(String tipo, Map<Usuario, Double> porcentajes) {
+    public EstrategiaReparto crearEstrategia(String tipo, Map<Usuario, Double> porcentajes, Set<Usuario> usuarios) {
         if (tipo.equalsIgnoreCase("PORCENTUAL")) {
             return new RepartoPorcentual(porcentajes);
         } 
         
         if (tipo.equalsIgnoreCase("EQUITATIVO")) {
-            return new RepartoEquitativo();
+            // Usamos el Set de usuarios que ya tenemos en el controlador
+            return new RepartoEquitativo(usuarios);
         }
 
-        // Si llega aquí, es un tipo que no conocemos. 
-        // Lo más seguro es lanzar una excepción para avisar al programador o a la vista.
         throw new IllegalArgumentException("Tipo de estrategia no reconocido: " + tipo);
     }
     
