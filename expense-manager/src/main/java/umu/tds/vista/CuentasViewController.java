@@ -27,6 +27,8 @@ public class CuentasViewController implements IObservador {
     @FXML private TableColumn<MiembroAux, String> colUsuario;
     @FXML private TableColumn<MiembroAux, Double> colPorcentaje;
     @FXML private TableColumn<MiembroAux, Double> colSaldo;
+    @FXML private Button btnAniadirUsuario;
+    @FXML private Button btnCrearCuenta;
 
     private ObservableList<MiembroAux> miembrosTemp = FXCollections.observableArrayList();
 
@@ -64,13 +66,16 @@ public class CuentasViewController implements IObservador {
         miembrosTemp.clear();
         txtNombreCuenta.setText(cuenta.getNombre());
         
+        txtNombreCuenta.setEditable(false);
+        txtLoginUsuario.setDisable(true);
+        btnAniadirUsuario.setDisable(true);
+        cbEstrategia.setDisable(true);
+        if (btnCrearCuenta != null) btnCrearCuenta.setDisable(true);
+
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
         cbEstrategia.setValue(cuenta.getEstrategia().toString().toUpperCase());
 
-        // 1. Obtenemos los saldos mediante el controlador
         Map<Usuario, Double> saldos = ctrl.getSaldosPorUsuarioCuenta(cuenta);
-
-        // 2. Obtenemos los porcentajes mediante el controlador (que delega en la cuenta)
         Map<Usuario, Double> porcentajes = ctrl.getPorcentajesUsuarioCuenta(cuenta);
 
         for (Usuario u : saldos.keySet()) {
@@ -150,9 +155,16 @@ public class CuentasViewController implements IObservador {
     @FXML
     private void handleLimpiar() {
         txtNombreCuenta.clear();
-        miembrosTemp.clear();
         txtLoginUsuario.clear();
+        miembrosTemp.clear();
         listaCuentasExistentes.getSelectionModel().clearSelection();
+        
+        // REHABILITAR EDICIÓN
+        txtNombreCuenta.setEditable(true);
+        txtLoginUsuario.setDisable(false);
+        btnAniadirUsuario.setDisable(false);
+        cbEstrategia.setDisable(false);
+        if (btnCrearCuenta != null) btnCrearCuenta.setDisable(false);
     }
 
     private void refrescarCuentas() {

@@ -54,7 +54,7 @@
                   <HBox spacing="10.0">
                      <children>
                         <TextField fx:id="txtLoginUsuario" promptText="Login del usuario..." HBox.hgrow="ALWAYS" />
-                        <Button onAction="#handleAniadirUsuario" text="Añadir Miembro" />
+                        <Button fx:id="btnAniadirUsuario" onAction="#handleAniadirUsuario" text="Añadir Miembro" />
                      </children>
                   </HBox>
 
@@ -70,7 +70,7 @@
                      <children>
                         <Button onAction="#handleRegistrarGastoEnCuenta" style="-fx-background-color: #2196f3; -fx-text-fill: white;" text="Registrar Gasto" />
                         <Button onAction="#handleLimpiar" text="Limpiar" />
-                        <Button onAction="#handleCrearCuenta" style="-fx-background-color: #4caf50; -fx-text-fill: white;" text="Crear Cuenta" />
+                        <Button fx:id="btnCrearCuenta" onAction="#handleCrearCuenta" style="-fx-background-color: #4caf50; -fx-text-fill: white;" text="Crear Cuenta" />
                      </children>
                   </HBox>
                </children>
