@@ -19,6 +19,7 @@ public abstract class Configuracion {
     // Métodos que cada implementación debe definir
     public abstract ControladorAppGastos getControladorAppGastos();
     public abstract String getRutaGastos();
+    public abstract String getRutaCategorias();
     public abstract String getRutaCuentas();
     public abstract String getRutaUsuarios();
     public abstract String getRutaAlertas();

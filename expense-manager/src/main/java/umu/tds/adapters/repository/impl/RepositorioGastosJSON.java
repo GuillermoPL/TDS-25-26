@@ -7,7 +7,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,53 +22,58 @@ import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
 import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
 import umu.tds.adapters.repository.RepositorioGastos;
 import umu.tds.modelo.Categoria;
-import umu.tds.modelo.CuentaCompartida;
 import umu.tds.modelo.Gasto;
-import umu.tds.modelo.Usuario;
 
 public class RepositorioGastosJSON implements RepositorioGastos {
 
 	private static final Logger log = LogManager.getLogger();
 
 	private List<Gasto> gastos = null;
-	private String rutaFichero;
+	private List<Categoria> categorias = null;
+	private String rutaGastos;
+	private String rutaCategorias;
 	
 
-	private void cargaGastos() throws ErrorPersistenciaException {
+	private void cargaGastosYCategorias() throws ErrorPersistenciaException {
 		try {
-			rutaFichero = Configuracion.getInstancia().getRutaGastos();
-			this.gastos = cargarGastos(rutaFichero);
+			rutaGastos = Configuracion.getInstancia().getRutaGastos();
+			rutaCategorias = Configuracion.getInstancia().getRutaCategorias();
+			this.gastos = cargar(rutaGastos, 
+								new TypeReference<List<Gasto>>() {});
+			this.categorias = cargar(rutaCategorias, 
+								new TypeReference<List<Categoria>>() {});
 		} catch (Exception e) {
-			log.error("Error cargando los gastos ", e);
+			log.error("Error cargando los gastos o las categorias ", e);
 			throw new ErrorPersistenciaException(e);
 		}
 	}
-	
-	private List<Gasto> cargarGastos(String rutaFichero)
+	private <T> T cargar(String rutaFichero, TypeReference<T> tipoReferencia)
+
 			throws StreamReadException, DatabindException, IOException {
 
-		// Intentamos abrir el fichero como recurso
 		InputStream ficheroStream = getClass().getResourceAsStream(rutaFichero);
+		
+		TypeReference<List<Gasto>> tipoListaGastos = new TypeReference<List<Gasto>>() {};
 
-		// Usamos Jackson para leer
 		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
+		if(tipoReferencia.getType().equals(tipoListaGastos.getType())) {
+			mapper.registerModule(new JavaTimeModule());
+		}
 
-		// Leemos el JSON y lo convertimos directamente a una Lista de Gastos
-		List<Gasto> gastosCargados = mapper.readValue(ficheroStream, new TypeReference<List<Gasto>>() {
-		});
+		T listaCargada = mapper.readValue(ficheroStream, tipoReferencia);
 
-		return gastosCargados;
+		return listaCargada;
 
 	}
-
+	
 	@Override
 	public List<Gasto> getGastos() {
 		if (gastos == null) {
 			try {
-				cargaGastos();
+				cargaGastosYCategorias();
 			} catch (ErrorPersistenciaException e) {
-				// Manejo la excepcion y la propago como Excepcion en Tiempo de Ejecución.
+				// Manejo la excepcion pero no la propago porque en este sitio es donde se puede
+				// gestionar mejor
 				log.error("No se han podido cargar los gastos ", e);
 				throw new RuntimeException(
 						"CRITICAL_LOAD_ERROR: No se pudo cargar el fichero de gastos.", e);
@@ -77,20 +81,9 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 		}
 		return gastos;
 	}
-	
-	@Override
-	public List<Gasto> getGastosPorCategoria(Categoria categoria){
-		return getGastos().stream()
-							.filter(g -> g.isCategoria(categoria))
-							.collect(Collectors.toList());
-	}
-
 
 	@Override
 	public void addGasto(Gasto gasto) throws ElementoExistenteException, ErrorPersistenciaException{
-		if (gastos == null) {
-			getGastos();
-		}
 		// Si el producto ya existe no puedo insertarlo
 		if (gastos.contains(gasto)) {
 			// TODO: Describir mejor el error de que ya esté el gasto registrado
@@ -98,7 +91,7 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 		}
 		gastos.add(gasto);
 		try {
-			guardarGastos(gastos, rutaFichero);
+			guardar(gastos, rutaGastos);
 		} catch (Exception e) {
 			// Hacemos rollback ya que asumimos que no se ha podido guardar el gasto
 			gastos.remove(gasto);
@@ -112,16 +105,13 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 
 	@Override
 	public void removeGasto(Gasto gasto) throws ErrorPersistenciaException{
-		if (gastos == null) {
-			getGastos();
-		}
 		if (!gastos.contains(gasto)) {
 			return;
 		}
 
 		gastos.remove(gasto);
 		try {
-			guardarGastos(gastos, rutaFichero);
+			guardar(gastos, rutaGastos);
 		} catch (Exception e) {
 			// Hacemos rollback ya que asumimos que no se ha podido eliminar el gasto
 			gastos.add(gasto);
@@ -136,9 +126,9 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 		if (gastos == null) {
 			getGastos();
 		}
-		// La modificación la hacemos en el controladorGastos
+		// La modificación la hacemos en el controlador
 		try {
-			guardarGastos(gastos, rutaFichero);
+			guardar(gastos, rutaGastos);
 		} catch (Exception e) {
 			log.error("Error actualizando el gasto {}", gasto, e);
 			throw new ErrorPersistenciaException(e);
@@ -146,39 +136,89 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 
 	}
 	
-	// Metodo para guardar por completo en el fichero json
-	private void guardarGastos(List<Gasto> gastos, String rutaFichero)
-			throws Exception {
-
-		// Se carga mediante URL para prevenir problemas con rutas con espacios en
-		// blanco o caracteres no estandar
-		URL url = getClass().getResource(rutaFichero);
-		
-		if (url == null) {
-			// Comprobamos por si el fichero fue eliminado con la aplicación abierta
-	        log.error("El fichero ha desaparecido en tiempo de ejecución.");
-	        throw new RuntimeException("El fichero de datos ha sido eliminado.");
-	    }
-		
-		try {
-			// Cargo el fichero a partir de la URL local
-			File ficheroJSon = Paths.get(url.toURI()).toFile();
-	        
-	        ObjectMapper mapper = new ObjectMapper();
-	        mapper.registerModule(new JavaTimeModule());
-	        
-	        mapper.writerWithDefaultPrettyPrinter().writeValue(ficheroJSon, gastos);
-	        
-	        this.gastos = gastos;
-	        
-	        log.info("Gastos guardados correctamente en: " + ficheroJSon.getAbsolutePath());
-			
-		} catch (IOException | URISyntaxException e) {
-			log.error("Error persistiendo en fichero", e);
-			throw e;
-		}
-	}
 	
+	
+	@Override
+	public List<Categoria> getCategorias() {
+		if (categorias == null) {
+			try {
+				cargaGastosYCategorias();
+			} catch (ErrorPersistenciaException e) {
+				// Manejo la excepcion y la propago como Excepcion en Tiempo de Ejecución.
+				log.error("No se han podido cargar las categorías ", e);
+				throw new RuntimeException(
+						"CRITICAL_LOAD_ERROR: No se pudo cargar el fichero de gastos o de categorías.", e);
+			}
+		}
+		return categorias;
+	}
+
+	@Override
+	public Categoria getCategoria(String nombreCat) {
+		if (categorias == null) {
+			getCategorias();
+		}
+		Categoria categoria = null;
+		for (Categoria c : categorias) {
+			if (categoria.equals(c)) {
+				categoria = c;
+			}
+		}
+		return categoria;
+	}
+
+	@Override
+	public void addCategoria(Categoria categoria) throws ElementoExistenteException, ErrorPersistenciaException {
+		if (categorias == null) {
+			getCategorias();
+		}
+		// Si el producto ya existe no puedo insertarlo
+		if (categorias.contains(categoria)) {
+			// TODO: Describir mejor el error de que ya esté la categoria registrada
+			throw new ElementoExistenteException("La categoría ya ha sido registrada");
+		}
+		categorias.add(categoria);
+		try {
+			guardar(categorias, rutaCategorias);
+		} catch (Exception e) {
+			// Hacemos rollback ya que asumimos que no se ha podido guardar el gasto
+			categorias.remove(categoria);
+			log.error("Error persistiendo la categoria {}", categoria, e);
+			// Capturo las excepciones genericas lanzadas al persistir y lanzo una propia
+			// encapsulando la excepcion real
+			throw new ErrorPersistenciaException(e);
+		}
+		
+	}
+
+		
+	// Metodo para guardar por completo en el fichero json correspondiente
+		private <T> void guardar(List<T> elementos, String rutaFichero)
+				throws Exception {
+
+			URL url = getClass().getResource(rutaFichero);
+			// Comprobamos por si el fichero fue eliminado con la aplicación abierta
+			if (url == null) {
+		        log.error("El fichero ha desaparecido en tiempo de ejecución.");
+		        throw new RuntimeException("El fichero de datos ha sido eliminado.");
+		    }
+			
+			try {
+				// Cargo el fichero a partir de la URL local
+				File ficheroJSon = Paths.get(url.toURI()).toFile();
+		        
+		        ObjectMapper mapper = new ObjectMapper();
+		        mapper.registerModule(new JavaTimeModule());
+		        
+		        mapper.writerWithDefaultPrettyPrinter().writeValue(ficheroJSon, elementos);
+		        
+		        log.info("Usuarios o cuentas guardadas correctamente en: " + ficheroJSon.getAbsolutePath());
+				
+			} catch (IOException | URISyntaxException e) {
+				log.error("Error persistiendo en fichero", e);
+				throw e;
+			}
+		}
 	
 
 }

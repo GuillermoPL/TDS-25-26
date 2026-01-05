@@ -42,7 +42,7 @@ public class RepositorioCuentasJSON implements RepositorioCuentas{
 			this.usuarios = cargar(rutaUsuarios,
 								new TypeReference<List<Usuario>>() {});
 		} catch (Exception e) {
-			log.error("Error cargando los gastos ", e);
+			log.error("Error cargando las cuentas o los usuarios ", e);
 			throw new ErrorPersistenciaException(e);
 		}
 	}
@@ -73,6 +73,21 @@ public class RepositorioCuentasJSON implements RepositorioCuentas{
 			}
 		}
 		return cuentas;
+	}
+	
+	@Override
+	public CuentaCompartida getCuenta(String nombre) {
+		if (cuentas == null) {
+			getCuentas();
+		}
+		CuentaCompartida cuenta = null;
+		for (CuentaCompartida c : cuentas) {
+			if (c.getNombre().equals(nombre)) {
+				cuenta = c;
+			}
+		}
+		return cuenta;
+		
 	}
 	
 	@Override
@@ -139,7 +154,7 @@ public class RepositorioCuentasJSON implements RepositorioCuentas{
 		try {
 			guardar(usuarios, rutaUsuarios);
 		} catch (Exception e) {
-			// Hacemos rollback ya que asumimos que no se ha podido guardar la cuenta
+			// Hacemos rollback ya que asumimos que no se ha podido guardar el usuario
 			usuarios.remove(u);
 			log.error("Error persistiendo el usuario {}", u, e);
 			// Capturo las excepciones genericas lanzadas al persistir y lanzo una propia
