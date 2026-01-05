@@ -85,7 +85,17 @@ public class GastosViewController implements IObservador {
 
     @Override
     public void actualizar(EventoSistema evento, Object datos) {
-        if (evento == EventoSistema.NUEVA_CATEGORIA || evento == EventoSistema.NUEVO_GASTO) {
+        // Escuchamos todos los eventos que afectan a la lista de gastos
+        if (evento == EventoSistema.NUEVO_GASTO || 
+            evento == EventoSistema.GASTO_MODIFICADO || 
+            evento == EventoSistema.GASTO_ELIMINADO) {
+            
+            javafx.application.Platform.runLater(() -> {
+                refrescarTabla();
+            });
+        }
+
+        if (evento == EventoSistema.NUEVA_CATEGORIA) {
             javafx.application.Platform.runLater(() -> {
                 actualizarComboCategorias();
             });
