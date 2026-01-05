@@ -2,6 +2,7 @@ package umu.tds.vista;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -102,24 +103,42 @@ public class CuentasViewController implements IObservador {
             return;
         }
 
-        TextInputDialog dialog = new TextInputDialog("0.00");
-        dialog.setTitle("Registrar Gasto - " + cuentaActual.getNombre());
-        dialog.setHeaderText("Pagador: " + pagador.getLogin());
-        dialog.setContentText("Importe del gasto compartido (€):");
+        // 1. Obtener las categorías reales disponibles en el sistema
+        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+        List<String> categoriasDisponibles = ctrl.getNombreCategorias();
 
-        dialog.showAndWait().ifPresent(strImporte -> {
-            try {
-                double importe = Double.parseDouble(strImporte);
-                ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
-                
-                // Registramos el gasto en la cuenta seleccionada
-                ctrl.registrarGastoEnCuenta(importe, LocalDate.now(), "Gasto Común", 
-                                            pagador.getLogin(), cuentaActual);
-                
-                mostrarInformacion("Éxito", "Gasto registrado y saldos actualizados.");
-            } catch (NumberFormatException e) {
-                mostrarAlerta("Error", "Importe no válido.");
-            }
+        if (categoriasDisponibles.isEmpty()) {
+            mostrarAlerta("Sin categorías", "No hay categorías registradas. Cree una antes de registrar gastos.");
+            return;
+        }
+
+        // 2. Diálogo para elegir la categoría
+        ChoiceDialog<String> catDialog = new ChoiceDialog<>(categoriasDisponibles.get(0), categoriasDisponibles);
+        catDialog.setTitle("Registrar Gasto - " + cuentaActual.getNombre());
+        catDialog.setHeaderText("Paso 1: Seleccione la categoría del gasto");
+        catDialog.setContentText("Categoría:");
+
+        catDialog.showAndWait().ifPresent(categoriaSeleccionada -> {
+            // 3. Si elige categoría, pedimos el importe
+            TextInputDialog importeDialog = new TextInputDialog("0.00");
+            importeDialog.setTitle("Registrar Gasto - " + cuentaActual.getNombre());
+            importeDialog.setHeaderText("Paso 2: Importe para " + categoriaSeleccionada);
+            importeDialog.setContentText("Importe pagado por " + pagador.getLogin() + " (€):");
+
+            importeDialog.showAndWait().ifPresent(strImporte -> {
+                try {
+                    double importe = Double.parseDouble(strImporte);
+                    if (importe <= 0) throw new NumberFormatException();
+
+                    // 4. Registramos el gasto con la categoría real seleccionada
+                    ctrl.registrarGastoEnCuenta(importe, LocalDate.now(), categoriaSeleccionada, 
+                                                pagador.getLogin(), cuentaActual);
+                    
+                    mostrarInformacion("Éxito", "Gasto de " + categoriaSeleccionada + " registrado correctamente.");
+                } catch (NumberFormatException e) {
+                    mostrarAlerta("Error", "Importe no válido. Debe ser un número mayor que cero.");
+                }
+            });
         });
     }
 
