@@ -145,6 +145,21 @@ public class CuentasViewController implements IObservador {
             return;
         }
 
+        // --- Validación de Porcentajes (HU 4.3) ---
+        if ("PORCENTUAL".equals(estrategia)) {
+            double sumaTotal = miembrosTemp.stream()
+                                .mapToDouble(MiembroAux::getPorcentaje)
+                                .sum();
+
+            // Verificamos que sume 100 (con un pequeño margen de error por los decimales)
+            if (Math.abs(sumaTotal - 100.0) > 0.01) {
+                mostrarAlerta("Error de Validación", 
+                    "Los porcentajes suman " + String.format("%.2f", sumaTotal) + "%. Deben sumar exactamente 100%.");
+                return; // Cortamos la ejecución aquí
+            }
+        }
+        // -------------------------------------------------
+
         Map<String, Double> datos = new HashMap<>();
         for (MiembroAux m : miembrosTemp) {
             datos.put(m.getLogin(), m.getPorcentaje());
@@ -153,7 +168,10 @@ public class CuentasViewController implements IObservador {
         try {
             Configuracion.getInstancia().getControladorAppGastos()
                 .crearCuentaCompartida(nombre, estrategia, datos);
-            handleLimpiar();
+            
+            mostrarInformacion("Cuenta Creada", "La cuenta compartida se ha guardado correctamente.");
+            handleLimpiar(); // Limpiamos y restauramos al usuario actual
+            
         } catch (Exception e) {
             mostrarAlerta("Error", e.getMessage());
         }
