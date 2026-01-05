@@ -30,6 +30,10 @@ public class Categoria {
 		return id;
 	}
 
+	public String getNombre() {
+	    return this.id; 
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
