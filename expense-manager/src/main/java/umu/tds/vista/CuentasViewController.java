@@ -42,7 +42,7 @@ public class CuentasViewController implements IObservador {
 
         colUsuario.setCellValueFactory(new PropertyValueFactory<>("login"));
         colPorcentaje.setCellValueFactory(new PropertyValueFactory<>("porcentaje"));
-        colSaldo.setCellValueFactory(new PropertyValueFactory<>("saldo")); // Nueva columna de saldo
+        colSaldo.setCellValueFactory(new PropertyValueFactory<>("saldo"));
 
         tablaMiembros.setEditable(true);
         colPorcentaje.setCellFactory(TextFieldTableCell.forTableColumn(new DoubleStringConverter()));
@@ -55,11 +55,18 @@ public class CuentasViewController implements IObservador {
         listaCuentasExistentes.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
             if (newSel != null) {
                 cargarCuentaExistente(newSel);
+            } else {
+                // Si se deselecciona (ej: al limpiar), volvemos al modo creación
+                // con el usuario actual
+                 reiniciarMiembrosConUsuarioActual();
             }
         });
 
         tablaMiembros.setItems(miembrosTemp);
         refrescarCuentas();
+        
+        // Inicializamos la tabla con el usuario logueado ---
+        reiniciarMiembrosConUsuarioActual();
     }
 
     private void cargarCuentaExistente(CuentaCompartida cuenta) {
@@ -156,7 +163,10 @@ public class CuentasViewController implements IObservador {
     private void handleLimpiar() {
         txtNombreCuenta.clear();
         txtLoginUsuario.clear();
-        miembrosTemp.clear();
+        
+        //En vez de clear(), usamos el método que restaura al usuario actual 
+        reiniciarMiembrosConUsuarioActual(); 
+        
         listaCuentasExistentes.getSelectionModel().clearSelection();
         
         // REHABILITAR EDICIÓN
@@ -180,6 +190,19 @@ public class CuentasViewController implements IObservador {
         }
     }
 
+ // Método auxiliar para resetear la tabla añadiendo siempre al usuario actual
+    private void reiniciarMiembrosConUsuarioActual() {
+        miembrosTemp.clear(); // 1. Limpiamos la lista
+        
+        // 2. Obtenemos el usuario de la sesión
+        Usuario usuarioActual = umu.tds.controlador.ControladorSesion.getInstancia().getUsuarioActual();
+        
+        if (usuarioActual != null) {
+            // 3. Lo añadimos como el primer miembro (Saldo 0, Porcentaje 0 por defecto)
+            miembrosTemp.add(new MiembroAux(usuarioActual.getLogin(), 0.0, 0.0));
+        }
+    }
+    
     public static class MiembroAux {
         private String login;
         private Double porcentaje;
