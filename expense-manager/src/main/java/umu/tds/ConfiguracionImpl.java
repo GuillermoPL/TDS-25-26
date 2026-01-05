@@ -21,12 +21,10 @@ public class ConfiguracionImpl extends Configuracion {
         return controlador;
     }
     
-    @Override 
-    public String getRutaAlertas() { 
-        return "/data/alertas.json"; 
-    }
-
+    
     @Override public String getRutaGastos() { return "/data/gastos.json"; }
+    @Override public String getRutaCategorias() { return "/data/categorias.json"; }
     @Override public String getRutaCuentas() { return "/data/cuentas.json"; }
     @Override public String getRutaUsuarios() { return "/data/usuarios.json"; }
+    @Override public String getRutaAlertas() { return "/data/alertas.json"; }
 }
