@@ -43,5 +43,10 @@ public class RepartoPorcentual implements EstrategiaReparto {
 	                 .collect(Collectors.summingDouble(Double::doubleValue));
 	    return Math.abs(suma - 100.0) < 0.01;
 	}
+	
+	@Override
+	public Map<Usuario, Double> getPorcentajes(){
+		return porcentajes;
+	}
 
 }

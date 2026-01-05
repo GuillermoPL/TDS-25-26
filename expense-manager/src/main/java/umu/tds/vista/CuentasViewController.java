@@ -1,9 +1,8 @@
 package umu.tds.vista;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -15,6 +14,7 @@ import umu.tds.Configuracion;
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.modelo.CuentaCompartida;
 import umu.tds.modelo.EventoSistema;
+import umu.tds.modelo.Usuario;
 
 public class CuentasViewController implements IObservador {
 
@@ -26,6 +26,7 @@ public class CuentasViewController implements IObservador {
     @FXML private TableView<MiembroAux> tablaMiembros;
     @FXML private TableColumn<MiembroAux, String> colUsuario;
     @FXML private TableColumn<MiembroAux, Double> colPorcentaje;
+    @FXML private TableColumn<MiembroAux, Double> colSaldo;
 
     private ObservableList<MiembroAux> miembrosTemp = FXCollections.observableArrayList();
 
@@ -37,23 +38,77 @@ public class CuentasViewController implements IObservador {
         cbEstrategia.getItems().addAll("EQUITATIVO", "PORCENTUAL");
         cbEstrategia.setValue("EQUITATIVO");
 
-        // CONFIGURACIÓN DE COLUMNAS
-        // Usamos PropertyValueFactory que busca los métodos 'getLogin' y 'getPorcentaje'
         colUsuario.setCellValueFactory(new PropertyValueFactory<>("login"));
         colPorcentaje.setCellValueFactory(new PropertyValueFactory<>("porcentaje"));
+        colSaldo.setCellValueFactory(new PropertyValueFactory<>("saldo")); // Nueva columna de saldo
 
-        // Hacer la columna de porcentaje editable
         tablaMiembros.setEditable(true);
         colPorcentaje.setCellFactory(TextFieldTableCell.forTableColumn(new DoubleStringConverter()));
         
-        // Cuando el usuario termina de escribir el número, actualizamos el objeto
         colPorcentaje.setOnEditCommit(event -> {
             MiembroAux miembro = event.getRowValue();
             miembro.setPorcentaje(event.getNewValue());
         });
 
+        listaCuentasExistentes.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
+            if (newSel != null) {
+                cargarCuentaExistente(newSel);
+            }
+        });
+
         tablaMiembros.setItems(miembrosTemp);
         refrescarCuentas();
+    }
+
+    private void cargarCuentaExistente(CuentaCompartida cuenta) {
+        miembrosTemp.clear();
+        txtNombreCuenta.setText(cuenta.getNombre());
+        
+        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+        cbEstrategia.setValue(cuenta.getEstrategia().toString().toUpperCase());
+
+        // 1. Obtenemos los saldos mediante el controlador
+        Map<Usuario, Double> saldos = ctrl.getSaldosPorUsuarioCuenta(cuenta);
+
+        // 2. Obtenemos los porcentajes mediante el controlador (que delega en la cuenta)
+        Map<Usuario, Double> porcentajes = ctrl.getPorcentajesUsuarioCuenta(cuenta);
+
+        for (Usuario u : saldos.keySet()) {
+            Double porc = porcentajes.getOrDefault(u, 0.0);
+            Double saldoActual = saldos.get(u);
+            miembrosTemp.add(new MiembroAux(u.getLogin(), porc, saldoActual));
+        }
+    }
+
+    @FXML
+    private void handleRegistrarGastoEnCuenta() {
+        CuentaCompartida cuentaActual = listaCuentasExistentes.getSelectionModel().getSelectedItem();
+        MiembroAux pagador = tablaMiembros.getSelectionModel().getSelectedItem();
+
+        if (cuentaActual == null || pagador == null) {
+            mostrarAlerta("Selección necesaria", "Seleccione una cuenta en la lista y el pagador en la tabla.");
+            return;
+        }
+
+        TextInputDialog dialog = new TextInputDialog("0.00");
+        dialog.setTitle("Registrar Gasto - " + cuentaActual.getNombre());
+        dialog.setHeaderText("Pagador: " + pagador.getLogin());
+        dialog.setContentText("Importe del gasto compartido (€):");
+
+        dialog.showAndWait().ifPresent(strImporte -> {
+            try {
+                double importe = Double.parseDouble(strImporte);
+                ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+                
+                // Registramos el gasto en la cuenta seleccionada
+                ctrl.registrarGastoEnCuenta(importe, LocalDate.now(), "Gasto Común", 
+                                            pagador.getLogin(), cuentaActual);
+                
+                mostrarInformacion("Éxito", "Gasto registrado y saldos actualizados.");
+            } catch (NumberFormatException e) {
+                mostrarAlerta("Error", "Importe no válido.");
+            }
+        });
     }
 
     @FXML
@@ -61,10 +116,10 @@ public class CuentasViewController implements IObservador {
         String login = txtLoginUsuario.getText().trim();
         if (login.isEmpty()) return;
         
-        // Evitar duplicados en la lista temporal
-        if (miembrosTemp.stream().anyMatch(m -> m.login.equals(login))) return;
+        if (miembrosTemp.stream().anyMatch(m -> m.getLogin().equals(login))) return;
 
-        miembrosTemp.add(new MiembroAux(login, 0.0));
+        miembrosTemp.add(new MiembroAux(login, 0.0, 0.0));
+        
         txtLoginUsuario.clear();
     }
 
@@ -74,26 +129,21 @@ public class CuentasViewController implements IObservador {
         String estrategia = cbEstrategia.getValue();
 
         if (nombre.isEmpty() || miembrosTemp.isEmpty()) {
-            mostrarAlerta("Datos incompletos", "Debe dar un nombre y añadir al menos un miembro.");
+            mostrarAlerta("Datos incompletos", "Debe dar un nombre y añadir miembros.");
             return;
         }
 
-        // Convertimos nuestra lista temporal al mapa que espera el controlador
-        Map<String, Double> datosParaControlador = new HashMap<>();
+        Map<String, Double> datos = new HashMap<>();
         for (MiembroAux m : miembrosTemp) {
-            datosParaControlador.put(m.login, m.porcentaje);
+            datos.put(m.getLogin(), m.getPorcentaje());
         }
 
         try {
             Configuracion.getInstancia().getControladorAppGastos()
-                .crearCuentaCompartida(nombre, estrategia, datosParaControlador);
-            
+                .crearCuentaCompartida(nombre, estrategia, datos);
             handleLimpiar();
-            mostrarInformacion("Éxito", "Cuenta compartida creada correctamente.");
-        } catch (IllegalArgumentException e) {
-            mostrarAlerta("Validación", e.getMessage());
         } catch (Exception e) {
-            mostrarAlerta("Error", "No se pudo crear la cuenta: " + e.getMessage());
+            mostrarAlerta("Error", e.getMessage());
         }
     }
 
@@ -102,6 +152,7 @@ public class CuentasViewController implements IObservador {
         txtNombreCuenta.clear();
         miembrosTemp.clear();
         txtLoginUsuario.clear();
+        listaCuentasExistentes.getSelectionModel().clearSelection();
     }
 
     private void refrescarCuentas() {
@@ -113,33 +164,28 @@ public class CuentasViewController implements IObservador {
     @Override
     public void actualizar(EventoSistema evento, Object datos) {
         if (evento == EventoSistema.NUEVA_CUENTA || evento == EventoSistema.SALDO_ACTUALIZADO) {
-            javafx.application.Platform.runLater(() -> refrescarCuentas());
+            javafx.application.Platform.runLater(this::refrescarCuentas);
         }
     }
 
-    // Clase auxiliar interna para la tabla
     public static class MiembroAux {
         private String login;
         private Double porcentaje;
+        private Double saldo; // Campo necesario para la visualización en la tabla
 
-        public MiembroAux(String login, Double porcentaje) {
+        public MiembroAux(String login, Double porcentaje, Double saldo) {
             this.login = login;
             this.porcentaje = porcentaje;
+            this.saldo = saldo;
         }
 
-        // Los GETTERS son obligatorios para la tabla
         public String getLogin() { return login; }
         public Double getPorcentaje() { return porcentaje; }
+        public Double getSaldo() { return saldo; } // Getter para colSaldo
         
-        // El SETTER es necesario para que la edición se guarde
         public void setPorcentaje(Double porcentaje) { this.porcentaje = porcentaje; }
     }
 
-    private void mostrarAlerta(String titulo, String mensaje) {
-        new Alert(Alert.AlertType.WARNING, mensaje).showAndWait();
-    }
-    
-    private void mostrarInformacion(String titulo, String mensaje) {
-        new Alert(Alert.AlertType.INFORMATION, mensaje).showAndWait();
-    }
+    private void mostrarAlerta(String t, String m) { new Alert(Alert.AlertType.WARNING, m).showAndWait(); }
+    private void mostrarInformacion(String t, String m) { new Alert(Alert.AlertType.INFORMATION, m).showAndWait(); }
 }
