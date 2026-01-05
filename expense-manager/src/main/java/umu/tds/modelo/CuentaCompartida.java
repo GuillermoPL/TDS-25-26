@@ -54,6 +54,10 @@ public class CuentaCompartida {
 		this.nombre = nombre;
 	}
 	
+	public void addGasto(Gasto gastoNuevo) {
+		estrategia.calcular(gastoNuevo, saldosPorUsuario);
+	}
+	
 	public Map<Usuario, Double> getPorcentajesEstrategia() {
 	    return estrategia.getPorcentajes(); 
 	}

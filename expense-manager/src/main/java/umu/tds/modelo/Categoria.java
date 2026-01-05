@@ -1,7 +1,5 @@
 package umu.tds.modelo;
 
-import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Categoria {
@@ -17,21 +15,17 @@ public class Categoria {
 		this.id = id;
 	}
 	
-	public String getCategoria() {
+	public String getId() {
 		return id;
 	}
 	
-	public void setCategoria(String cat_id) {
+	public void setId(String cat_id) {
 		this.id = cat_id;
 	}
 	
 	@Override
     public String toString() {
 		return id;
-	}
-
-	public String getNombre() {
-	    return this.id; 
 	}
 	
 	@Override

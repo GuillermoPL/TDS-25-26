@@ -10,7 +10,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.time.LocalDate;
 
-import umu.tds.Configuracion;
 import umu.tds.adapters.repository.RepositorioAlertas;
 import umu.tds.adapters.repository.RepositorioCuentas;
 import umu.tds.adapters.repository.RepositorioGastos;
@@ -22,12 +21,14 @@ import umu.tds.modelo.EstrategiaReparto;
 import umu.tds.modelo.FactoriaEstrategia;
 import umu.tds.modelo.Gasto;
 import umu.tds.modelo.IEstrategiaAlerta;
-import umu.tds.modelo.RepartoPorcentual;
 import umu.tds.modelo.Alerta;
 import umu.tds.modelo.Categoria;
 import umu.tds.modelo.EventoSistema;
 import umu.tds.vista.IObservador;
 import umu.tds.modelo.Usuario;
+import umu.tds.modelo.importacion.FactoriaImportadores;
+import umu.tds.modelo.importacion.ImportadorGastos;
+import umu.tds.modelo.importacion.exceptions.ImportacionException;
 
 
 
@@ -261,6 +262,62 @@ public class ControladorAppGastos {
 	        this.notificarCambio(EventoSistema.GASTO_MODIFICADO, gasto);
 	        verificarAlertas(gasto);
 	    } catch (ErrorPersistenciaException e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	public void importarGastos(String rutaFichero) throws ImportacionException{
+	    try {
+	    	ImportadorGastos importador = FactoriaImportadores.getInstancia().crearImportador(rutaFichero);
+	    	
+	        // 1. El importador nos da el mapa crudo con objetos temporales
+	        Map<String, List<Gasto>> mapa = importador.leerGastos(rutaFichero);
+
+	        // Recorremos las cuentas que venían en el CSV
+	        for (String nombreCuenta : mapa.keySet()) {
+	            
+	            // Buscamos la CUENTA REAL (en caso de que no sea la cuenta personal)
+	            CuentaCompartida cuentaReal = repoCuentas.getCuenta(nombreCuenta);
+	            if (!nombreCuenta.equals("Personal") && cuentaReal == null) {
+	                throw new ImportacionException("No existe la cuenta " + nombreCuenta +".");
+	            }
+
+	            // B. Procesamos los gastos de esa cuenta
+	            List<Gasto> gastosNuevos = mapa.get(nombreCuenta);
+	            
+	            for (Gasto gasto : gastosNuevos) {
+	                
+	                // 1. Sacamos la categoría temporal que creó el importador
+	                Categoria catFantasma = gasto.getCategoria();
+	                
+	                // 2. Preguntamos al Repo si ya existe una con ese nombre
+	                // (Asumo que tienes un método buscarPorNombre o getCategorias() y filtras)
+	                Categoria catReal = repoGastos.getCategoria(catFantasma.getId());
+	                
+	                if (catReal != null) {
+	                    // Si ya existía:
+	                    // Tiramos la temporal y le ponemos la real al gasto.
+	                    gasto.setCategoria(catReal);
+	                    
+	                } else {
+	                    // Si no existía (es nueva)
+	                    // La registramos en el sistema.
+	                    repoGastos.addCategoria(catFantasma);
+	                    // El gasto se queda con ella (ahora ya es real).
+	                }
+
+	                // 3. Finalmente, añadimos el gasto limpio a la cuenta y viceversa, en caso
+	                //    de que esta no sea la cuenta personal.
+	                if (!nombreCuenta.equals("Personal")) {
+	                	gasto.setCuenta(cuentaReal);
+	                	cuentaReal.addGasto(gasto);
+	                }
+	            }
+	        }
+	        
+	        System.out.println("Importación finalizada y reconciliada.");
+
+	    } catch (Exception e) {
 	        e.printStackTrace();
 	    }
 	}
