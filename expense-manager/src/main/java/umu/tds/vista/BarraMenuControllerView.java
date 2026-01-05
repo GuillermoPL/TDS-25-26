@@ -1,6 +1,7 @@
 package umu.tds.vista;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -59,5 +60,9 @@ public class BarraMenuControllerView implements IObservador {
     private void irACuentas() {
         // Usamos el SceneManager que ya tiene el método showCuentas()
         Configuracion.getInstancia().getSceneManager().showCuentas();
+    }
+    @FXML
+    private void irACalendario(ActionEvent event) {
+        Configuracion.getInstancia().getSceneManager().showCalendario();
     }
 }

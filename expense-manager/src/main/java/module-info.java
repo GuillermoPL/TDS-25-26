@@ -8,7 +8,8 @@ module umu.tds.expensemanager {
     requires com.fasterxml.jackson.databind;
     requires org.apache.logging.log4j;
     requires com.fasterxml.jackson.datatype.jsr310; 
-
+    requires com.calendarfx.view;
+    
     opens umu.tds.vista to javafx.fxml;
 
     opens umu.tds.modelo to javafx.base, com.fasterxml.jackson.databind;

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.BorderPane?>
+
+<BorderPane fx:id="contenedorCalendario" 
+            xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="umu.tds.vista.CalendarioViewController">
+    
+    <top>
+        <fx:include source="BarraMenu.fxml" />
+    </top>
+
+</BorderPane>
