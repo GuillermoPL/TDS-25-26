@@ -5,6 +5,7 @@ import java.util.List;
 import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
 import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
 import umu.tds.modelo.Alerta;
+import umu.tds.modelo.Notificacion;
 
 public interface RepositorioAlertas {
 	
@@ -14,6 +15,10 @@ public interface RepositorioAlertas {
 	
 	public void removeAlerta(Alerta alerta) throws ErrorPersistenciaException;
 	
-	public void updateAlerta(Alerta alerta) throws ErrorPersistenciaException; 
+	public void updateAlerta(Alerta alerta) throws ErrorPersistenciaException;
+	
+	public List<Notificacion> getNotificaciones();
+	
+	public void addNotificacion(Notificacion notificacion) throws ElementoExistenteException, ErrorPersistenciaException;
 
 }

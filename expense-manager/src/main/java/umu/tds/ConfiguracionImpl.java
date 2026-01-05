@@ -27,4 +27,5 @@ public class ConfiguracionImpl extends Configuracion {
     @Override public String getRutaCuentas() { return "/data/cuentas.json"; }
     @Override public String getRutaUsuarios() { return "/data/usuarios.json"; }
     @Override public String getRutaAlertas() { return "/data/alertas.json"; }
+    @Override public String getRutaNotificaciones() { return "/data/notificaciones.json"; }
 }

@@ -47,6 +47,7 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 			throw new ErrorPersistenciaException(e);
 		}
 	}
+	
 	private <T> T cargar(String rutaFichero, TypeReference<T> tipoReferencia)
 
 			throws StreamReadException, DatabindException, IOException {
@@ -193,32 +194,32 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 
 		
 	// Metodo para guardar por completo en el fichero json correspondiente
-		private <T> void guardar(List<T> elementos, String rutaFichero)
-				throws Exception {
+	private <T> void guardar(List<T> elementos, String rutaFichero)
+			throws Exception {
 
-			URL url = getClass().getResource(rutaFichero);
-			// Comprobamos por si el fichero fue eliminado con la aplicación abierta
-			if (url == null) {
-		        log.error("El fichero ha desaparecido en tiempo de ejecución.");
-		        throw new RuntimeException("El fichero de datos ha sido eliminado.");
-		    }
+		URL url = getClass().getResource(rutaFichero);
+		// Comprobamos por si el fichero fue eliminado con la aplicación abierta
+		if (url == null) {
+	        log.error("El fichero ha desaparecido en tiempo de ejecución.");
+	        throw new RuntimeException("El fichero de datos ha sido eliminado.");
+	    }
+		
+		try {
+			// Cargo el fichero a partir de la URL local
+			File ficheroJSon = Paths.get(url.toURI()).toFile();
+	        
+	        ObjectMapper mapper = new ObjectMapper();
+	        mapper.registerModule(new JavaTimeModule());
+	        
+	        mapper.writerWithDefaultPrettyPrinter().writeValue(ficheroJSon, elementos);
+	        
+	        log.info("Usuarios o cuentas guardadas correctamente en: " + ficheroJSon.getAbsolutePath());
 			
-			try {
-				// Cargo el fichero a partir de la URL local
-				File ficheroJSon = Paths.get(url.toURI()).toFile();
-		        
-		        ObjectMapper mapper = new ObjectMapper();
-		        mapper.registerModule(new JavaTimeModule());
-		        
-		        mapper.writerWithDefaultPrettyPrinter().writeValue(ficheroJSon, elementos);
-		        
-		        log.info("Usuarios o cuentas guardadas correctamente en: " + ficheroJSon.getAbsolutePath());
-				
-			} catch (IOException | URISyntaxException e) {
-				log.error("Error persistiendo en fichero", e);
-				throw e;
-			}
+		} catch (IOException | URISyntaxException e) {
+			log.error("Error persistiendo en fichero", e);
+			throw e;
 		}
+	}
 	
 
 }

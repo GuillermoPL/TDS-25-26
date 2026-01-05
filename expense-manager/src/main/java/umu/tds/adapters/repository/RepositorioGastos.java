@@ -14,7 +14,6 @@ public interface RepositorioGastos {
 	
 	public void removeGasto(Gasto gasto) throws ErrorPersistenciaException;
 	
-
 	public void updateGasto(Gasto gasto) throws ErrorPersistenciaException;
 	
 	public List<Categoria> getCategorias();
