@@ -3,8 +3,6 @@ package umu.tds;
 import java.util.Scanner;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
-
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.controlador.ControladorSesion;
 import umu.tds.modelo.Gasto;
@@ -48,7 +46,7 @@ public class MainCLI {
                         for (Gasto g : gastos) {
                             System.out.println(" > [" + g.getId() + "] " 
                                 + g.getImporte() + "€ en " 
-                                + g.getCategoria().getNombre() + " (" + g.getFecha() + ")");
+                                + g.getCategoria().getId() + " (" + g.getFecha() + ")");
                         }
                     }
                     break;

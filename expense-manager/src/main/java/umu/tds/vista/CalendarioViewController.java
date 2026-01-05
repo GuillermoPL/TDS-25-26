@@ -13,8 +13,6 @@ import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.modelo.EventoSistema;
 import umu.tds.modelo.Gasto;
 
-import java.time.LocalTime;
-
 public class CalendarioViewController implements IObservador {
 
     @FXML
@@ -63,7 +61,7 @@ public class CalendarioViewController implements IObservador {
         // Recorremos tus gastos y creamos "Entries"
         for (Gasto g : ctrl.getGastosPorCondicion(x -> true)) {
             // Título: Cantidad + Categoría
-            String titulo = String.format("%.2f€ - %s", g.getImporte(), g.getCategoria().getNombre());
+            String titulo = String.format("%.2f€ - %s", g.getImporte(), g.getCategoria().getId());
             
             Entry<Gasto> entry = new Entry<>(titulo);
             
