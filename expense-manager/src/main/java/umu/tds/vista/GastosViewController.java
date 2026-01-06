@@ -167,13 +167,16 @@ public class GastosViewController implements IObservador {
     private void handleBorrarGasto() {
         Gasto seleccionado = tablaGastos.getSelectionModel().getSelectedItem();
         if (seleccionado != null) {
-            Alert confirm = new Alert(AlertType.CONFIRMATION, "¿Borrar gasto de " + seleccionado.getImporte() + "€?", ButtonType.YES, ButtonType.NO);
-            confirm.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.YES) {
-                    // ACCESO CORRECTO A TRAVÉS DE CONFIGURACIÓN
-                    Configuracion.getInstancia().getControladorAppGastos().eliminarGasto(seleccionado);
-                }
-            });
+            boolean confirmado = UIUtils.mostrarInterrogacion(
+                "Confirmar Borrado", 
+                null, 
+                "¿Estás seguro de que deseas borrar el gasto de " + seleccionado.getImporte() + "€?"
+            );
+            
+            if (confirmado) {
+                // Acceso a través de la configuración según el patrón del Service Locator
+                Configuracion.getInstancia().getControladorAppGastos().eliminarGasto(seleccionado);
+            }
         }
     }
 
