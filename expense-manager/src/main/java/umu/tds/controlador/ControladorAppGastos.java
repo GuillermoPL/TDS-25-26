@@ -109,6 +109,10 @@ public class ControladorAppGastos {
 	//gestion de la lista
 	// Métodos para gestionar la lista
     public void registrarObservador(IObservador obs) {
+    	// Primero eliminamos si hay alguna instancia de la vista que vamos a registrar, para que
+    	// no se guarden duplicados y por tanto no se notifique muchas veces a la misma vista.
+    	observadores.removeIf(o -> o.getClass().equals(obs.getClass()));
+    	
         observadores.add(obs);
     }
 
