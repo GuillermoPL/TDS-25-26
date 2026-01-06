@@ -94,10 +94,6 @@ public class NuevoGastoController {
     }
 
     private void mostrarAlerta(String titulo, String mensaje) {
-        Alert alert = new Alert(AlertType.WARNING);
-        alert.setTitle(titulo);
-        alert.setHeaderText(null);
-        alert.setContentText(mensaje);
-        alert.showAndWait();
+        UIUtils.mostrarAlertaWarning(titulo, null, mensaje);
     }
 }

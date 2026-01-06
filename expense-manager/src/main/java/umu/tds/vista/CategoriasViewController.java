@@ -14,7 +14,6 @@ public class CategoriasViewController implements IObservador {
 
     @FXML
     public void initialize() {
-        // CAMBIO: Acceso mediante Configuracion
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
         ctrl.registrarObservador(this);
         refrescarLista();
@@ -26,12 +25,10 @@ public class CategoriasViewController implements IObservador {
         if (nombre.isEmpty()) return;
 
         try {
-            // CAMBIO: Acceso mediante Configuracion
             Configuracion.getInstancia().getControladorAppGastos().registrarCategoria(nombre); 
             txtNombreCategoria.clear();
         } catch (ElementoExistenteException | ErrorPersistenciaException e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, e.getMessage());
-            alert.showAndWait();
+            UIUtils.mostrarAlertaError("Error de Categoría", "No se pudo registrar", e.getMessage());
             if (e instanceof ErrorPersistenciaException) {
             	throw new IllegalStateException(e.getMessage(), e);
             }

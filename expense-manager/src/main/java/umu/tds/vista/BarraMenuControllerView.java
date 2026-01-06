@@ -25,11 +25,7 @@ public class BarraMenuControllerView implements IObservador {
 	    if (evento == EventoSistema.ALERTA_DISPARADA) {
 	        Alerta alerta = (Alerta) datos;
 	        javafx.application.Platform.runLater(() -> {
-	            Alert dialog = new Alert(Alert.AlertType.WARNING);
-	            dialog.setTitle("Límite de Gastos");
-	            dialog.setHeaderText("¡Atención: Presupuesto Excedido!");
-	            dialog.setContentText("Has superado tu límite de " + alerta.getLimite() + "€.");
-	            dialog.show();
+	        	UIUtils.mostrarAlertaWarning("Límite de Gastos", "¡Atención: Presupuesto Excedido!", "Has superado tu límite de " + alerta.getLimite() + "€.");
 	        });
 	    }
 	}
@@ -38,15 +34,14 @@ public class BarraMenuControllerView implements IObservador {
         // Cerramos la aplicación de forma limpia
         System.exit(0);
     }
-
+    
     @FXML
     private void abrirAcerca() {
-        // Si aún no tienes el diálogo hecho, puedes mostrar una alerta simple
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Acerca de");
-        alert.setHeaderText("ExpenseManager v1.0");
-        alert.setContentText("Desarrollado para la asignatura TDS.\nUniversidad de Murcia.");
-        alert.showAndWait();
+        UIUtils.mostrarAyuda(
+            "Ayuda del Sistema", 
+            "ExpenseManager v1.0", 
+            "Para cualquier duda, consulte el manual de usuario o contacte con soporte."
+        );
     }
     // Métodos de navegación que ya teníamos...
     @FXML private void irAGastos() { Configuracion.getInstancia().getSceneManager().showGastos(); }
