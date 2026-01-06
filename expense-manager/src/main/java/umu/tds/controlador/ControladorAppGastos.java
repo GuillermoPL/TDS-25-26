@@ -37,7 +37,6 @@ public class ControladorAppGastos {
     private RepositorioGastos repoGastos;
     private RepositorioCuentas repoCuentas;
     private RepositorioAlertas repoAlertas;
-    private Set<String> categoriasPersonalizadas = new HashSet<>();
     private List<IObservador> observadores = new LinkedList<>();
     // Constructor
     public ControladorAppGastos(RepositorioGastos repoGastos, RepositorioCuentas repoCuentas, RepositorioAlertas repoAlertas) {
@@ -56,7 +55,7 @@ public class ControladorAppGastos {
                 .collect(Collectors.toList());
     }
     
-    private void inicializarCategoriasPredefinidas() {
+    private void inicializarCategoriasPredefinidas() throws ErrorPersistenciaException {
         String[] predefinidas = {"Alimentación", "Transporte", "Entretenimiento"};
         
         for (String nombre : predefinidas) {
@@ -69,7 +68,7 @@ public class ControladorAppGastos {
         }
     }
     
-    public void inicializarDatos() {
+    public void inicializarDatos() throws ErrorPersistenciaException {
         inicializarCategoriasPredefinidas();
     }
     
@@ -120,7 +119,7 @@ public class ControladorAppGastos {
 	public List<Gasto> getGastosPorCondicion(Predicate<Gasto> condicion) {
 		List<Gasto> gastos = repoGastos.getGastos();
 		return gastos.stream()
-				.filter(g -> condicion.test(g))
+				.filter(condicion)
 				.collect(Collectors.toList());
 	}
 	
@@ -233,10 +232,9 @@ public class ControladorAppGastos {
 	}
 	
 	public List<String> getNombreCategorias() {
-	    Set<String> nombres = repoGastos.getGastos().stream()
-	            .map(g -> g.getCategoria().toString())
+	    Set<String> nombres = repoGastos.getCategorias().stream()
+	            .map(c -> c.getId())
 	            .collect(Collectors.toSet());
-	    nombres.addAll(categoriasPersonalizadas);
 	    
 	    return nombres.stream().sorted().collect(Collectors.toList());
 	}
@@ -244,6 +242,7 @@ public class ControladorAppGastos {
 	private void notificarCambio(EventoSistema evento, Object datos) {
         observadores.forEach(obs -> obs.actualizar(evento, datos));
     }
+	
 	public void registrarGasto(double importe, LocalDate fecha, String nombreCat) {
 	    try {
 	        // 1. Obtenemos el usuario de la sesión (Imprescindible para el modelo)
@@ -255,7 +254,7 @@ public class ControladorAppGastos {
 
 	        // 2. Preparamos los datos
 	        String id = "G-" + System.currentTimeMillis();
-	        Categoria cat = new Categoria(nombreCat);
+	        Categoria cat = repoGastos.getCategoria(nombreCat);
 	        
 	        // 3. Creamos el objeto con su pagador real
 	        Gasto nuevo = new Gasto(id, importe, fecha, cat, pagador); 
@@ -278,17 +277,15 @@ public class ControladorAppGastos {
 	        e.printStackTrace();
 	    }
 	}
-	public void registrarCategoria(String nombre) throws ElementoExistenteException {
-	    List<String> existentes = getNombreCategorias();
-	    if (existentes.contains(nombre)) {
-	        throw new ElementoExistenteException("La categoría '" + nombre + "' ya existe.");
-	    }
+	
+	public void registrarCategoria(String nombre) throws ElementoExistenteException, ErrorPersistenciaException {
+		repoGastos.addCategoria(new Categoria(nombre));
+		
+		// Notificamos el cambio para que las vistas se enteren
+		this.notificarCambio(EventoSistema.NUEVA_CATEGORIA, nombre);
 
-	    categoriasPersonalizadas.add(nombre);
-	    
-	    // Notificamos el cambio para que las vistas se enteren
-	    this.notificarCambio(EventoSistema.NUEVA_CATEGORIA, nombre);
 	}
+	
 	public void eliminarGasto(Gasto gasto) {
 	    try {
 	        repoGastos.removeGasto(gasto); 

@@ -6,6 +6,7 @@ import umu.tds.Configuracion; // Importante
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.modelo.EventoSistema;
 import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
+import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
 
 public class CategoriasViewController implements IObservador {
     @FXML private TextField txtNombreCategoria;
@@ -28,9 +29,12 @@ public class CategoriasViewController implements IObservador {
             // CAMBIO: Acceso mediante Configuracion
             Configuracion.getInstancia().getControladorAppGastos().registrarCategoria(nombre); 
             txtNombreCategoria.clear();
-        } catch (ElementoExistenteException e) {
+        } catch (ElementoExistenteException | ErrorPersistenciaException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR, e.getMessage());
             alert.showAndWait();
+            if (e instanceof ErrorPersistenciaException) {
+            	throw new IllegalStateException(e.getMessage(), e);
+            }
         }
     }
 
