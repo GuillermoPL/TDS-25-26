@@ -8,20 +8,19 @@ import umu.tds.modelo.Usuario;
 public class App extends Application {
 	@Override
     public void start(Stage stage) {
-        // 1. Inicialización de la configuración
+        // 1. Crear y establecer la configuración
         Configuracion configuracion = new ConfiguracionImpl();
         Configuracion.setInstancia(configuracion);
         
+        // 2. INICIALIZAR DATOS: Ahora que 'configuracion' ya no es null para el Repo
         configuracion.getControladorAppGastos().inicializarDatos(); 
         
-        // Creamos un usuario de prueba
+        // 3. Sesión de prueba
         Usuario usuarioPrueba = new Usuario("pepe"); 
         ControladorSesion.getInstancia().setUsuarioActual(usuarioPrueba);
         
-        // 2. Inicializar el SceneManager
+        // 4. Mostrar interfaz
         configuracion.getSceneManager().inicializar(stage);
-        
-        // 3. Lanzar la ventana principal
         configuracion.getSceneManager().showGastos();
     }
 

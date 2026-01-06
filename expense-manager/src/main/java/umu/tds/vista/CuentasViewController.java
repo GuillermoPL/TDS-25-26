@@ -36,39 +36,49 @@ public class CuentasViewController implements IObservador {
     @FXML
     public void initialize() {
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+        
+        // 1. Registrar el observador para enterarnos de cambios en el sistema
         ctrl.registrarObservador(this);
 
+        // 2. Configurar el ComboBox de Estrategia
         cbEstrategia.getItems().addAll("EQUITATIVO", "PORCENTUAL");
+        // REQUISITO: Reparto equitativo seleccionado por defecto
         cbEstrategia.setValue("EQUITATIVO");
 
+        // 3. Configurar las columnas de la tabla
         colUsuario.setCellValueFactory(new PropertyValueFactory<>("login"));
         colPorcentaje.setCellValueFactory(new PropertyValueFactory<>("porcentaje"));
         colSaldo.setCellValueFactory(new PropertyValueFactory<>("saldo"));
 
+        // 4. Permitir la edición de la columna de porcentajes
         tablaMiembros.setEditable(true);
         colPorcentaje.setCellFactory(TextFieldTableCell.forTableColumn(new DoubleStringConverter()));
-        
         colPorcentaje.setOnEditCommit(event -> {
             MiembroAux miembro = event.getRowValue();
             miembro.setPorcentaje(event.getNewValue());
         });
 
+        // 5. Listener para cuando se selecciona una cuenta de la lista de la izquierda
         listaCuentasExistentes.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
             if (newSel != null) {
                 cargarCuentaExistente(newSel);
             } else {
-                // Si se deselecciona (ej: al limpiar), volvemos al modo creación
-                // con el usuario actual
-                 reiniciarMiembrosConUsuarioActual();
+                // Si se deselecciona, volvemos al estado de "Nueva Cuenta"
+                handleLimpiar();
             }
         });
 
+        // 6. Vincular la lista observable a la tabla
         tablaMiembros.setItems(miembrosTemp);
+
+        // 7. Cargar las cuentas que ya existen en el sistema
         refrescarCuentas();
-        
-        // Inicializamos la tabla con el usuario logueado ---
+
+        // 8. Estado inicial: preparar para crear una cuenta nueva con el usuario actual
         reiniciarMiembrosConUsuarioActual();
     }
+    
+    
 
     private void cargarCuentaExistente(CuentaCompartida cuenta) {
         miembrosTemp.clear();
@@ -99,37 +109,27 @@ public class CuentasViewController implements IObservador {
         MiembroAux pagador = tablaMiembros.getSelectionModel().getSelectedItem();
 
         if (cuentaActual == null || pagador == null) {
-            mostrarAlerta("Selección necesaria", "Seleccione una cuenta y el pagador en la tabla.");
+            mostrarAlerta("Selección necesaria", "Seleccione cuenta y pagador.");
             return;
         }
 
-        // 1. Obtener categorías reales del controlador
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
-        List<String> categoriasDisponibles = ctrl.getNombreCategorias();
+        List<String> categorias = ctrl.getNombreCategorias();
 
-        // 2. Primer Diálogo: Selección de Categoría Predefinida
-        ChoiceDialog<String> catDialog = new ChoiceDialog<>(categoriasDisponibles.get(0), categoriasDisponibles);
-        catDialog.setTitle("Registrar Gasto Compartido");
+        // REQUISITO: Elegir categoría real (no "Gasto común")
+        ChoiceDialog<String> catDialog = new ChoiceDialog<>(categorias.get(0), categorias);
+        catDialog.setTitle("Registrar Gasto");
         catDialog.setHeaderText("Seleccione la categoría del gasto");
-        catDialog.setContentText("Categoría:");
 
-        catDialog.showAndWait().ifPresent(categoriaSeleccionada -> {
-            // 3. Segundo Diálogo: Importe
-            TextInputDialog importeDialog = new TextInputDialog("0.00");
-            importeDialog.setTitle("Importe del Gasto");
-            importeDialog.setHeaderText("Gasto de " + categoriaSeleccionada);
-            importeDialog.setContentText("¿Cuánto ha pagado " + pagador.getLogin() + "?:");
-
-            importeDialog.showAndWait().ifPresent(strImporte -> {
+        catDialog.showAndWait().ifPresent(cat -> {
+            TextInputDialog impDialog = new TextInputDialog("0.00");
+            impDialog.setHeaderText("Importe para " + cat);
+            
+            impDialog.showAndWait().ifPresent(strImp -> {
                 try {
-                    double importe = Double.parseDouble(strImporte);
-                    if (importe <= 0) throw new NumberFormatException();
-
-                    // 4. Registro final con la categoría elegida
-                    ctrl.registrarGastoEnCuenta(importe, LocalDate.now(), categoriaSeleccionada, 
-                                                pagador.getLogin(), cuentaActual);
-                    
-                    mostrarInformacion("Éxito", "Gasto registrado en la categoría " + categoriaSeleccionada);
+                    double importe = Double.parseDouble(strImp);
+                    ctrl.registrarGastoEnCuenta(importe, LocalDate.now(), cat, pagador.getLogin(), cuentaActual);
+                    mostrarInformacion("Éxito", "Gasto registrado.");
                 } catch (NumberFormatException e) {
                     mostrarAlerta("Error", "Importe no válido.");
                 }
@@ -195,13 +195,11 @@ public class CuentasViewController implements IObservador {
     private void handleLimpiar() {
         txtNombreCuenta.clear();
         txtLoginUsuario.clear();
-        
-        //En vez de clear(), usamos el método que restaura al usuario actual 
-        reiniciarMiembrosConUsuarioActual(); 
-        
+        cbEstrategia.setValue("EQUITATIVO"); // Reset al valor por defecto
+        reiniciarMiembrosConUsuarioActual();
         listaCuentasExistentes.getSelectionModel().clearSelection();
         
-        // REHABILITAR EDICIÓN
+        // Rehabilitar componentes bloqueados
         txtNombreCuenta.setEditable(true);
         txtLoginUsuario.setDisable(false);
         btnAniadirUsuario.setDisable(false);
@@ -224,13 +222,10 @@ public class CuentasViewController implements IObservador {
 
  // Método auxiliar para resetear la tabla añadiendo siempre al usuario actual
     private void reiniciarMiembrosConUsuarioActual() {
-        miembrosTemp.clear(); // 1. Limpiamos la lista
-        
-        // 2. Obtenemos el usuario de la sesión
+        miembrosTemp.clear();
         Usuario usuarioActual = umu.tds.controlador.ControladorSesion.getInstancia().getUsuarioActual();
-        
         if (usuarioActual != null) {
-            // 3. Lo añadimos como el primer miembro (Saldo 0, Porcentaje 0 por defecto)
+            // Se añade con porcentaje 0 y saldo 0 por defecto
             miembrosTemp.add(new MiembroAux(usuarioActual.getLogin(), 0.0, 0.0));
         }
     }
