@@ -363,4 +363,7 @@ public class ControladorAppGastos {
 	        e.printStackTrace();
 	    }
 	}
+	public boolean isImporteValido(double importe) {
+	    return importe > 0;
+	}
 }

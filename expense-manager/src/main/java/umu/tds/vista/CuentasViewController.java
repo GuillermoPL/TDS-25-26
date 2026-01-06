@@ -108,7 +108,7 @@ public class CuentasViewController implements IObservador {
 
     @FXML
     private void handleRegistrarGastoEnCuenta() {
-        CuentaCompartida cuentaActual = listaCuentasExistentes.getSelectionModel().getSelectedItem();
+    	CuentaCompartida cuentaActual = listaCuentasExistentes.getSelectionModel().getSelectedItem();
         MiembroAux pagador = tablaMiembros.getSelectionModel().getSelectedItem();
 
         if (cuentaActual == null || pagador == null) {
@@ -121,9 +121,8 @@ public class CuentasViewController implements IObservador {
 
         ChoiceDialog<String> catDialog = new ChoiceDialog<>(categorias.get(0), categorias);
         catDialog.setTitle("Registrar Gasto");
-        catDialog.setHeaderText("Seleccione la categoría del gasto");
-
-        // --- PERSONALIZACIÓN DEL ICONO ---
+        catDialog.setHeaderText("Seleccione categoría");
+        
         try {
             // Cargamos tu imagen personalizada desde la carpeta de recursos
             Image img = new Image(App.class.getResourceAsStream("imagenes/interrogacion.png"));
@@ -136,17 +135,21 @@ public class CuentasViewController implements IObservador {
         } catch (Exception e) {
             System.err.println("No se pudo cargar la imagen personalizada para ChoiceDialog");
         }
-        // ---------------------------------
 
         catDialog.showAndWait().ifPresent(cat -> {
             TextInputDialog impDialog = new TextInputDialog("0.00");
             impDialog.setHeaderText("Importe para " + cat);
             
-            // Opcional: También puedes personalizar el icono del impDialog aquí de la misma forma
-            
             impDialog.showAndWait().ifPresent(strImp -> {
                 try {
-                    double importe = Double.parseDouble(strImp);
+                    // Soportamos comas convirtiéndolas a puntos
+                    double importe = Double.parseDouble(strImp.replace(",", "."));
+                    
+                    if (!ctrl.isImporteValido(importe)) {
+                        mostrarAlerta("Importe no válido", "El importe debe ser mayor que cero.");
+                        return;
+                    }
+
                     ctrl.registrarGastoEnCuenta(importe, LocalDate.now(), cat, pagador.getLogin(), cuentaActual);
                     mostrarInformacion("Éxito", "Gasto registrado.");
                 } catch (NumberFormatException e) {
