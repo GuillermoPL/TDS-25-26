@@ -38,8 +38,21 @@ public class AlertasViewController implements IObservador {
         String periodo = cbPeriodo.getValue();
         String categoriaSel = cbCategoria.getValue();
 
+        // 1. Validación de campos vacíos
+        if (strLimite.isEmpty() || periodo == null || categoriaSel == null) {
+            UIUtils.mostrarAlertaWarning("Campos incompletos", null, "Por favor, rellena todos los campos.");
+            return;
+        }
+
         try {
             double limite = Double.parseDouble(strLimite);
+
+            // 2. Evitar valores negativos o cero
+            if (limite <= 0) {
+                UIUtils.mostrarAlertaError("Valor no válido", null, "El límite debe ser un número positivo (mayor que cero).");
+                return;
+            }
+
             // Si elige "Todas", pasamos null como categoría
             String catParaControlador = categoriaSel.equals("Todas") ? null : categoriaSel;
             
@@ -47,8 +60,10 @@ public class AlertasViewController implements IObservador {
                          .crearAlerta(limite, periodo, catParaControlador);
             
             txtLimite.clear();
+            
         } catch (NumberFormatException e) {
-            new Alert(Alert.AlertType.ERROR, "El límite debe ser un número válido.").showAndWait();
+            // 3. Usar la imagen error.png para fallos de formato
+            UIUtils.mostrarAlertaError("Error de Formato", null, "El límite introducido debe ser un número válido.");
         }
     }
 
