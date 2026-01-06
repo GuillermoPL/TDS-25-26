@@ -44,9 +44,9 @@ public class NuevoGastoController {
         LocalDate fecha = dpFecha.getValue();
         String nombreCategoria = cbCategoria.getValue();
 
-        // 1. VALIDACIÓN DE CAMPOS
-        if (strImporte.isEmpty() || fecha == null || nombreCategoria == null || nombreCategoria.isEmpty()) {
-            mostrarAlerta("Campos incompletos", "Por favor, rellena todos los campos y selecciona una categoría.");
+        // 1. VALIDACIÓN DE CAMPOS: Usa la versión de 2 argumentos
+        if (strImporte.isEmpty() || fecha == null || nombreCategoria == null) {
+            UIUtils.mostrarAlerta(AlertType.WARNING, "Campos incompletos", null, "Por favor, rellena todos los campos.");
             return;
         }
 
@@ -54,9 +54,9 @@ public class NuevoGastoController {
             double importe = Double.parseDouble(strImporte);
             ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
 
-            // 2. VALIDACIÓN DE NEGOCIO: (Desacoplada al controlador)
+            // 2. VALIDACIÓN DE NEGOCIO: Usa la versión de 4 argumentos
             if (!ctrl.isImporteValido(importe)) {
-                mostrarAlerta("Importe no válido", "El importe debe ser mayor que cero.");
+                UIUtils.mostrarAlerta(AlertType.WARNING, "Importe no válido", null, "El importe debe ser mayor que cero.");
                 return;
             }
 
@@ -70,7 +70,8 @@ public class NuevoGastoController {
             }
             cerrarVentana();
         } catch (NumberFormatException e) {
-            mostrarAlerta("Error de formato", "Introduce un número válido para el importe.");
+            // Usa la versión de 2 argumentos
+            UIUtils.mostrarAlerta(AlertType.WARNING, "Error de formato", null, "Introduce un número válido para el importe.");
         }
     }
 
@@ -86,8 +87,5 @@ public class NuevoGastoController {
         // 2. Usamos close() que es la forma estándar de cerrar una ventana hija
         stage.close(); 
     }
-
-    private void mostrarAlerta(String titulo, String mensaje) {
-        UIUtils.mostrarAlertaWarning(titulo, null, mensaje);
-    }
+    
 }

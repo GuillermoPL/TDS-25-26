@@ -8,6 +8,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.image.Image;
@@ -108,56 +109,53 @@ public class CuentasViewController implements IObservador {
 
     @FXML
     private void handleRegistrarGastoEnCuenta() {
-    	CuentaCompartida cuentaActual = listaCuentasExistentes.getSelectionModel().getSelectedItem();
+        CuentaCompartida cuentaActual = listaCuentasExistentes.getSelectionModel().getSelectedItem();
         MiembroAux pagador = tablaMiembros.getSelectionModel().getSelectedItem();
 
+        // 1. Verificación de selección previa
         if (cuentaActual == null || pagador == null) {
-            mostrarAlerta("Selección necesaria", "Seleccione cuenta y pagador.");
+            UIUtils.mostrarAlerta(AlertType.WARNING, "Selección necesaria", null, "Seleccione cuenta y pagador.");
             return;
         }
 
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
         List<String> categorias = ctrl.getNombreCategorias();
 
+        // 2. Diálogo de selección de categoría
         ChoiceDialog<String> catDialog = new ChoiceDialog<>(categorias.get(0), categorias);
         catDialog.setTitle("Registrar Gasto");
         catDialog.setHeaderText("Seleccione categoría");
-        
-        try {
-            // Cargamos la imagen personalizada desde la carpeta de recursos
-            Image img = new Image(App.class.getResourceAsStream("imagenes/interrogacion.png"));
-            ImageView iconView = new ImageView(img);
-            iconView.setFitHeight(48);
-            iconView.setFitWidth(48);
-            
-            // Asignamos el nuevo gráfico al diálogo
-            catDialog.setGraphic(iconView);
-        } catch (Exception e) {
-            System.err.println("No se pudo cargar la imagen personalizada para ChoiceDialog");
-        }
+        catDialog.getDialogPane().getStyleClass().add("confirmation");
 
         catDialog.showAndWait().ifPresent(cat -> {
+            // 3. Diálogo de introducción de importe
             TextInputDialog impDialog = new TextInputDialog("0.00");
+            impDialog.setTitle("Importe del Gasto");
             impDialog.setHeaderText("Importe para " + cat);
+            impDialog.getDialogPane().getStyleClass().add("confirmation");
             
             impDialog.showAndWait().ifPresent(strImp -> {
                 try {
-                    // Soportamos comas convirtiéndolas a puntos
+                    // Soportamos comas convirtiéndolas a puntos para evitar errores de parseo
                     double importe = Double.parseDouble(strImp.replace(",", "."));
                     
+                    // 4. Validación de negocio desacoplada en el controlador
                     if (!ctrl.isImporteValido(importe)) {
-                        mostrarAlerta("Importe no válido", "El importe debe ser mayor que cero.");
+                        UIUtils.mostrarAlerta(AlertType.WARNING, "Importe no válido", null, "El importe debe ser mayor que cero.");
                         return;
                     }
 
+                    // 5. Registro final del gasto
                     ctrl.registrarGastoEnCuenta(importe, LocalDate.now(), cat, pagador.getLogin(), cuentaActual);
-                    mostrarInformacion("Éxito", "Gasto registrado.");
+                    UIUtils.mostrarAlerta(AlertType.INFORMATION, "Éxito", null, "Gasto registrado correctamente.");
+                    
                 } catch (NumberFormatException e) {
-                    mostrarAlerta("Error", "Importe no válido.");
+                    UIUtils.mostrarAlerta(AlertType.ERROR, "Error de formato", null, "El importe introducido no es un número válido.");
                 }
             });
         });
     }
+    
 
     @FXML
     private void handleAniadirUsuario() {
@@ -177,7 +175,7 @@ public class CuentasViewController implements IObservador {
         String estrategia = cbEstrategia.getValue();
 
         if (nombre.isEmpty() || miembrosTemp.isEmpty()) {
-            mostrarAlerta("Datos incompletos", "Debe dar un nombre y añadir miembros.");
+            UIUtils.mostrarAlerta(AlertType.WARNING, "Datos incompletos", null, "Debe dar un nombre y añadir miembros.");
             return;
         }
 
@@ -189,8 +187,7 @@ public class CuentasViewController implements IObservador {
 
             // Verificamos que sume 100 (con un pequeño margen de error por los decimales)
             if (Math.abs(sumaTotal - 100.0) > 0.01) {
-                mostrarAlerta("Error de Validación", 
-                    "Los porcentajes suman " + String.format("%.2f", sumaTotal) + "%. Deben sumar exactamente 100%.");
+                UIUtils.mostrarAlerta(AlertType.WARNING, "Error de Validación", null, "Los porcentajes suman " + String.format("%.2f", sumaTotal) + "%. Deben sumar exactamente 100%.");
                 return; // Cortamos la ejecución aquí
             }
         }
@@ -205,11 +202,11 @@ public class CuentasViewController implements IObservador {
             Configuracion.getInstancia().getControladorAppGastos()
                 .crearCuentaCompartida(nombre, estrategia, datos);
             
-            mostrarInformacion("Cuenta Creada", "La cuenta compartida se ha guardado correctamente.");
+            UIUtils.mostrarAlerta(AlertType.CONFIRMATION, "Cuenta Creada", null, "La cuenta compartida se ha guardado correctamente.");
             handleLimpiar(); // Limpiamos y restauramos al usuario actual
             
         } catch (Exception e) {
-            mostrarAlerta("Error", e.getMessage());
+            UIUtils.mostrarAlerta(AlertType.WARNING, "Error", null, e.getMessage());
         }
     }
 
@@ -270,11 +267,4 @@ public class CuentasViewController implements IObservador {
         public void setPorcentaje(Double porcentaje) { this.porcentaje = porcentaje; }
     }
 
-    private void mostrarAlerta(String t, String m) { 
-        UIUtils.mostrarAlertaWarning(t, null, m); 
-    }
-    
-    private void mostrarInformacion(String t, String m) { 
-        UIUtils.mostrarCheck(t, null, m); 
-    }
 }
