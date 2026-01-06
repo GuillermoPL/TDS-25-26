@@ -42,17 +42,18 @@ public class NuevoGastoController {
     private void handleGuardar() {
         String strImporte = txtImporte.getText().trim();
         LocalDate fecha = dpFecha.getValue();
-        String nombreCategoria = cbCategoria.getValue();
+        String nombreCategoria = cbCategoria.getValue(); // Obtiene el String seleccionado
 
-        if (strImporte.isEmpty() || fecha == null || nombreCategoria == null) {
-            mostrarAlerta("Campos incompletos", "Por favor, rellena todos los campos.");
+        // 1. VALIDACIÓN: Evita enviar datos nulos al controlador
+        if (strImporte.isEmpty() || fecha == null || nombreCategoria == null || nombreCategoria.isEmpty()) {
+            mostrarAlerta("Campos incompletos", "Por favor, rellena todos los campos y selecciona una categoría.");
             return;
         }
 
         try {
             double importe = Double.parseDouble(strImporte);
             
-            // Validación extra: no permitir gastos negativos (HU 1.1)
+            // Validación de importe positivo
             if (importe <= 0) {
                 mostrarAlerta("Importe no válido", "El importe debe ser mayor que cero.");
                 return;
@@ -61,10 +62,13 @@ public class NuevoGastoController {
             ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
 
             if (gastoAEditar == null) {
+                // Registro de nuevo gasto
                 ctrl.registrarGasto(importe, fecha, nombreCategoria);
             } else {
+                // Edición de gasto existente
                 gastoAEditar.setImporte(importe);
                 gastoAEditar.setFecha(fecha);
+                // Creamos un objeto categoría temporal para la edición
                 gastoAEditar.setCategoria(new Categoria(nombreCategoria));
                 ctrl.modificarGasto(gastoAEditar);
             }
