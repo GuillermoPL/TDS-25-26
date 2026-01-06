@@ -55,6 +55,23 @@ public class ControladorAppGastos {
                 .collect(Collectors.toList());
     }
     
+    private void inicializarCategoriasPredefinidas() {
+        String[] predefinidas = {"Alimentación", "Transporte", "Entretenimiento"};
+        
+        for (String nombre : predefinidas) {
+            try {
+                // Intentamos registrarlas. Si ya existen, nuestro método lanzará ElementoExistenteException
+                this.registrarCategoria(nombre);
+            } catch (ElementoExistenteException e) {
+                // No hacemos nada, ya existe en el sistema
+            }
+        }
+    }
+    
+    public void inicializarDatos() {
+        inicializarCategoriasPredefinidas();
+    }
+    
     public void crearAlerta(double limite, String periodo, String nombreCategoria) {
         try {
             // 1. Crear estrategia mediante la factoría
