@@ -67,21 +67,8 @@ public class AlertasViewController implements IObservador {
 
     @Override
     public void actualizar(EventoSistema evento, Object datos) {
-        // Si el sistema notifica una nueva alerta o una eliminación, refrescamos la lista
         if (evento == EventoSistema.NUEVA_ALERTA) {
-            // Platform.runLater asegura que la actualización ocurra en el hilo de la interfaz
             javafx.application.Platform.runLater(() -> refrescarLista());
-        }
-        if (evento == EventoSistema.ALERTA_DISPARADA) {
-            Alerta alerta = (Alerta) datos;
-            javafx.application.Platform.runLater(() -> {
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setTitle("Límite de Gastos");
-                alert.setHeaderText("¡Atención: Presupuesto Excedido!");
-                alert.setContentText("Has superado tu límite de " + alerta.getLimite() + "€.");
-                
-                alert.show(); 
-            });
         }
     }
 }
