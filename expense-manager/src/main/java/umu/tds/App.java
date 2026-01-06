@@ -2,6 +2,7 @@ package umu.tds;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
 import umu.tds.controlador.ControladorSesion;
 import umu.tds.modelo.Usuario;
 
@@ -13,7 +14,13 @@ public class App extends Application {
         Configuracion.setInstancia(configuracion);
         
         // 2. Inicializar datos
-        configuracion.getControladorAppGastos().inicializarDatos(); 
+        try {
+			configuracion.getControladorAppGastos().inicializarDatos();
+		} catch (ErrorPersistenciaException e) {
+			// Si salta esta excepción es porque no está bien configurado el json de los gastos
+			// o el de las categorías.
+			throw new IllegalStateException(e.getMessage());
+		} 
         
         // 3. Sesión de prueba
         Usuario usuarioPrueba = new Usuario("yo"); 
