@@ -116,7 +116,6 @@ public class CuentasViewController implements IObservador {
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
         List<String> categorias = ctrl.getNombreCategorias();
 
-        // REQUISITO: Elegir categoría real (no "Gasto común")
         ChoiceDialog<String> catDialog = new ChoiceDialog<>(categorias.get(0), categorias);
         catDialog.setTitle("Registrar Gasto");
         catDialog.setHeaderText("Seleccione la categoría del gasto");
@@ -248,6 +247,11 @@ public class CuentasViewController implements IObservador {
         public void setPorcentaje(Double porcentaje) { this.porcentaje = porcentaje; }
     }
 
-    private void mostrarAlerta(String t, String m) { new Alert(Alert.AlertType.WARNING, m).showAndWait(); }
-    private void mostrarInformacion(String t, String m) { new Alert(Alert.AlertType.INFORMATION, m).showAndWait(); }
+    private void mostrarAlerta(String t, String m) { 
+        UIUtils.mostrarAlertaWarning(t, null, m); 
+    }
+    
+    private void mostrarInformacion(String t, String m) { 
+        UIUtils.mostrarCheck(t, null, m); 
+    }
 }
