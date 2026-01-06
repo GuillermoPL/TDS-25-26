@@ -20,6 +20,7 @@ import umu.tds.adapters.repository.RepositorioCuentas;
 import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
 import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
 import umu.tds.modelo.CuentaCompartida;
+import umu.tds.modelo.Gasto;
 import umu.tds.modelo.Usuario;
 
 public class RepositorioCuentasJSON implements RepositorioCuentas{
@@ -110,6 +111,21 @@ public class RepositorioCuentasJSON implements RepositorioCuentas{
 			// encapsulando la excepcion real
 			throw new ErrorPersistenciaException(e);
 		}
+	}
+	
+	@Override
+	public void updateCuenta(CuentaCompartida cuenta) throws ErrorPersistenciaException {
+		if (cuentas == null) {
+			getCuentas();
+		}
+		// La modificación la hacemos en el controlador
+		try {
+			guardar(cuentas, rutaCuentas);
+		} catch (Exception e) {
+			log.error("Error actualizando la cuenta {}", cuenta, e);
+			throw new ErrorPersistenciaException(e);
+		}
+
 	}
 	
 	@Override

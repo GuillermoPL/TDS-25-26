@@ -124,7 +124,7 @@ public class CuentasViewController implements IObservador {
         catDialog.setHeaderText("Seleccione categoría");
         
         try {
-            // Cargamos tu imagen personalizada desde la carpeta de recursos
+            // Cargamos la imagen personalizada desde la carpeta de recursos
             Image img = new Image(App.class.getResourceAsStream("imagenes/interrogacion.png"));
             ImageView iconView = new ImageView(img);
             iconView.setFitHeight(48);
