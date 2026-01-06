@@ -109,9 +109,10 @@ public class CuentasViewController implements IObservador {
 
     @FXML
     private void handleRegistrarGastoEnCuenta() {
-    	CuentaCompartida cuentaActual = listaCuentasExistentes.getSelectionModel().getSelectedItem();
+        CuentaCompartida cuentaActual = listaCuentasExistentes.getSelectionModel().getSelectedItem();
         MiembroAux pagador = tablaMiembros.getSelectionModel().getSelectedItem();
 
+        // 1. Verificación de selección previa
         if (cuentaActual == null || pagador == null) {
             UIUtils.mostrarAlerta(AlertType.WARNING, "Selección necesaria", null, "Seleccione cuenta y pagador.");
             return;
@@ -120,28 +121,36 @@ public class CuentasViewController implements IObservador {
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
         List<String> categorias = ctrl.getNombreCategorias();
 
+        // 2. Diálogo de selección de categoría
         ChoiceDialog<String> catDialog = new ChoiceDialog<>(categorias.get(0), categorias);
         catDialog.setTitle("Registrar Gasto");
         catDialog.setHeaderText("Seleccione categoría");
+        catDialog.getDialogPane().getStyleClass().add("confirmation");
 
         catDialog.showAndWait().ifPresent(cat -> {
+            // 3. Diálogo de introducción de importe
             TextInputDialog impDialog = new TextInputDialog("0.00");
+            impDialog.setTitle("Importe del Gasto");
             impDialog.setHeaderText("Importe para " + cat);
+            impDialog.getDialogPane().getStyleClass().add("confirmation");
             
             impDialog.showAndWait().ifPresent(strImp -> {
                 try {
-                    // Soportamos comas convirtiéndolas a puntos
+                    // Soportamos comas convirtiéndolas a puntos para evitar errores de parseo
                     double importe = Double.parseDouble(strImp.replace(",", "."));
                     
+                    // 4. Validación de negocio desacoplada en el controlador
                     if (!ctrl.isImporteValido(importe)) {
                         UIUtils.mostrarAlerta(AlertType.WARNING, "Importe no válido", null, "El importe debe ser mayor que cero.");
                         return;
                     }
 
+                    // 5. Registro final del gasto
                     ctrl.registrarGastoEnCuenta(importe, LocalDate.now(), cat, pagador.getLogin(), cuentaActual);
-                    UIUtils.mostrarAlerta(AlertType.INFORMATION, "Éxito", null, "Gasto registrado.");
+                    UIUtils.mostrarAlerta(AlertType.INFORMATION, "Éxito", null, "Gasto registrado correctamente.");
+                    
                 } catch (NumberFormatException e) {
-                    UIUtils.mostrarAlerta(AlertType.WARNING, "Error", null, "Importe no válido.");
+                    UIUtils.mostrarAlerta(AlertType.ERROR, "Error de formato", null, "El importe introducido no es un número válido.");
                 }
             });
         });

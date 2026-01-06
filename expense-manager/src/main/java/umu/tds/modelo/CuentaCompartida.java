@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class CuentaCompartida {
 	private String nombre;
 	private Map<Usuario, Double> saldosPorUsuario;
@@ -37,8 +39,8 @@ public class CuentaCompartida {
 		return estrategia;
 	}
 	
-	public void calcularGasto(Gasto gasto) {
-		estrategia.calcular(gasto, saldosPorUsuario);
+	public void addGasto(Gasto gastoNuevo) {
+		estrategia.calcular(gastoNuevo, saldosPorUsuario);
 	}
 
 	@Override
@@ -54,10 +56,8 @@ public class CuentaCompartida {
 		this.nombre = nombre;
 	}
 	
-	public void addGasto(Gasto gastoNuevo) {
-		estrategia.calcular(gastoNuevo, saldosPorUsuario);
-	}
 	
+	@JsonIgnore
 	public Map<Usuario, Double> getPorcentajesEstrategia() {
 	    return estrategia.getPorcentajes(); 
 	}

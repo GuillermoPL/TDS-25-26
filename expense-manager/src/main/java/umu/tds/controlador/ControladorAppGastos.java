@@ -168,14 +168,16 @@ public class ControladorAppGastos {
 	        
 	        // 2. Creamos el objeto Gasto
 	        String id = "G-COMP-" + System.currentTimeMillis();
-	        Categoria cat = new Categoria(nombreCat);
-	        Gasto nuevoGasto = new Gasto(id, importe, fecha, cat, pagador);
-
-	        // 3. Delegamos el cálculo a la cuenta (aplica su estrategia)
-	        cuenta.calcularGasto(nuevoGasto);
+	        Categoria cat = repoGastos.getCategoria(nombreCat);
+	        Gasto nuevoGasto = new Gasto(id, importe, fecha, cat, pagador, cuenta.getNombre());
+	        
+	        // 3. Añadimos el gasto a la cuenta (a la real, la que está guardada en memoria)
+	        CuentaCompartida cuentaReal = repoCuentas.getCuenta(cuenta.getNombre());
+	        cuentaReal.addGasto(nuevoGasto);
 
 	        // 4. Persistencia
 	        repoGastos.addGasto(nuevoGasto);
+	        repoCuentas.updateCuenta(cuenta);
 	        
 	        // 5. Notificación para refrescar saldos en la UI
 	        this.notificarCambio(EventoSistema.SALDO_ACTUALIZADO, cuenta);
@@ -355,7 +357,7 @@ public class ControladorAppGastos {
 	                // 3. Finalmente, añadimos el gasto limpio a la cuenta y viceversa, en caso
 	                //    de que esta no sea la cuenta personal.
 	                if (!nombreCuenta.equals("Personal")) {
-	                	gasto.setCuenta(cuentaReal);
+	                	gasto.setCuenta(cuentaReal.getNombre());
 	                	cuentaReal.addGasto(gasto);
 	                }
 	            }
