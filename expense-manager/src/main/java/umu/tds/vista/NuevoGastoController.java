@@ -42,9 +42,9 @@ public class NuevoGastoController {
     private void handleGuardar() {
         String strImporte = txtImporte.getText().trim();
         LocalDate fecha = dpFecha.getValue();
-        String nombreCategoria = cbCategoria.getValue(); // Obtiene el String seleccionado
+        String nombreCategoria = cbCategoria.getValue();
 
-        // 1. VALIDACIÓN: Evita enviar datos nulos al controlador
+        // 1. VALIDACIÓN DE CAMPOS
         if (strImporte.isEmpty() || fecha == null || nombreCategoria == null || nombreCategoria.isEmpty()) {
             mostrarAlerta("Campos incompletos", "Por favor, rellena todos los campos y selecciona una categoría.");
             return;
@@ -52,29 +52,23 @@ public class NuevoGastoController {
 
         try {
             double importe = Double.parseDouble(strImporte);
-            
-            // Validación de importe positivo
-            if (importe <= 0) {
+            ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+
+            // 2. VALIDACIÓN DE NEGOCIO: (Desacoplada al controlador)
+            if (!ctrl.isImporteValido(importe)) {
                 mostrarAlerta("Importe no válido", "El importe debe ser mayor que cero.");
                 return;
             }
 
-            ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
-
             if (gastoAEditar == null) {
-                // Registro de nuevo gasto
                 ctrl.registrarGasto(importe, fecha, nombreCategoria);
             } else {
-                // Edición de gasto existente
                 gastoAEditar.setImporte(importe);
                 gastoAEditar.setFecha(fecha);
-                // Creamos un objeto categoría temporal para la edición
                 gastoAEditar.setCategoria(new Categoria(nombreCategoria));
                 ctrl.modificarGasto(gastoAEditar);
             }
-
             cerrarVentana();
-
         } catch (NumberFormatException e) {
             mostrarAlerta("Error de formato", "Introduce un número válido para el importe.");
         }
