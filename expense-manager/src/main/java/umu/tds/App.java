@@ -6,18 +6,17 @@ import umu.tds.controlador.ControladorSesion;
 import umu.tds.modelo.Usuario;
 
 public class App extends Application {
-    @Override
+	@Override
     public void start(Stage stage) {
-        // 1. Inicialización de la configuración (Fachada/Service Locator)
+        // 1. Inicialización de la configuración
         Configuracion configuracion = new ConfiguracionImpl();
         Configuracion.setInstancia(configuracion);
         
-        // Creamos un usuario de prueba (usando el constructor que recibe el ID/Login)
-        Usuario usuarioPrueba = new Usuario("pepe"); 
+        configuracion.getControladorAppGastos().inicializarDatos(); 
         
-        // Lo asignamos como usuario de la sesión actual
+        // Creamos un usuario de prueba
+        Usuario usuarioPrueba = new Usuario("pepe"); 
         ControladorSesion.getInstancia().setUsuarioActual(usuarioPrueba);
-        // ------------------------------------------------
         
         // 2. Inicializar el SceneManager
         configuracion.getSceneManager().inicializar(stage);
