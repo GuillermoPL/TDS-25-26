@@ -2,6 +2,7 @@ package umu.tds.vista;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.Alert.AlertType;
 import umu.tds.Configuracion;
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.modelo.Alerta;
@@ -40,7 +41,7 @@ public class AlertasViewController implements IObservador {
 
         // 1. Validación de campos obligatorios
         if (strLimite.isEmpty() || periodo == null || categoriaSel == null) {
-            UIUtils.mostrarAlertaWarning("Campos incompletos", null, "Por favor, rellena todos los campos.");
+            UIUtils.mostrarAlerta(AlertType.WARNING, "Campos incompletos", null, "Por favor, rellena todos los campos.");
             return;
         }
 
@@ -49,7 +50,7 @@ public class AlertasViewController implements IObservador {
 
             // 2. Evitar valores negativos o cero
             if (limite <= 0) {
-                UIUtils.mostrarAlertaError("Valor no válido", null, "El límite debe ser un número positivo (mayor que cero).");
+            	mostrarAlerta(AlertType.WARNING, "Importe no válido", null, "El importe debe ser mayor que cero.");
                 return;
             }
 
@@ -63,7 +64,7 @@ public class AlertasViewController implements IObservador {
             
         } catch (NumberFormatException e) {
             // Se dispara si el usuario introduce letras en el campo del límite
-            UIUtils.mostrarAlertaError("Error de Formato", null, "El límite introducido debe ser un número válido.");
+            UIUtils.mostrarAlerta(AlertType.ERROR, "Error de Formato", null, "El límite introducido debe ser un número válido.");
         }
     }
 
@@ -92,5 +93,13 @@ public class AlertasViewController implements IObservador {
         if (evento == EventoSistema.NUEVA_ALERTA || evento == EventoSistema.ALERTA_DISPARADA) {
             javafx.application.Platform.runLater(() -> refrescarLista());
         }
+    }
+    
+    private void mostrarAlerta(AlertType tipo, String titulo, String cabecera, String mensaje) {
+        Alert alert = new Alert(tipo);
+        alert.setTitle(titulo);
+        alert.setHeaderText(cabecera);
+        alert.setContentText(mensaje);
+        alert.showAndWait();
     }
 }

@@ -1,6 +1,7 @@
 package umu.tds.vista;
 
 import java.util.List;
+import java.util.Optional;
 import java.time.LocalDate;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -167,14 +168,17 @@ public class GastosViewController implements IObservador {
     private void handleBorrarGasto() {
         Gasto seleccionado = tablaGastos.getSelectionModel().getSelectedItem();
         if (seleccionado != null) {
-            boolean confirmado = UIUtils.mostrarInterrogacion(
-                "Confirmar Borrado", 
-                null, 
-                "¿Estás seguro de que deseas borrar el gasto de " + seleccionado.getImporte() + "€?"
-            );
+            // Creación directa de la alerta nativa
+            Alert confirm = new Alert(AlertType.CONFIRMATION);
+            confirm.setTitle("Confirmar Borrado");
+            confirm.setHeaderText(null);
+            confirm.setContentText("¿Borrar gasto de " + seleccionado.getImporte() + "€?");
             
-            if (confirmado) {
-                // Acceso a través de la configuración según el patrón del Service Locator
+            // Configuración de botones nativos
+            confirm.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+
+            Optional<ButtonType> result = confirm.showAndWait();
+            if (result.isPresent() && result.get() == ButtonType.YES) {
                 Configuracion.getInstancia().getControladorAppGastos().eliminarGasto(seleccionado);
             }
         }

@@ -5,6 +5,7 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import umu.tds.Configuracion;
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.modelo.Alerta;
@@ -25,7 +26,7 @@ public class BarraMenuControllerView implements IObservador {
 	    if (evento == EventoSistema.ALERTA_DISPARADA) {
 	        Alerta alerta = (Alerta) datos;
 	        javafx.application.Platform.runLater(() -> {
-	        	UIUtils.mostrarAlertaWarning("Límite de Gastos", "¡Atención: Presupuesto Excedido!", "Has superado tu límite de " + alerta.getLimite() + "€.");
+	        	UIUtils.mostrarAlerta(AlertType.WARNING, "Límite de Gastos", "¡Atención: Presupuesto Excedido!", "Has superado tu límite de " + alerta.getLimite() + "€.");
 	        });
 	    }
 	}
@@ -37,7 +38,7 @@ public class BarraMenuControllerView implements IObservador {
     
     @FXML
     private void abrirAcerca() {
-        UIUtils.mostrarAyuda(
+        UIUtils.mostrarAlerta(AlertType.INFORMATION,
             "Ayuda del Sistema", 
             "ExpenseManager v1.0", 
             "Para cualquier duda, consulte el manual de usuario o contacte con soporte."

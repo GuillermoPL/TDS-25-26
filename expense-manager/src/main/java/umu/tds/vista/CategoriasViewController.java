@@ -2,6 +2,7 @@ package umu.tds.vista;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.Alert.AlertType;
 import umu.tds.Configuracion; // Importante
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.modelo.EventoSistema;
@@ -28,7 +29,7 @@ public class CategoriasViewController implements IObservador {
             Configuracion.getInstancia().getControladorAppGastos().registrarCategoria(nombre); 
             txtNombreCategoria.clear();
         } catch (ElementoExistenteException | ErrorPersistenciaException e) {
-            UIUtils.mostrarAlertaError("Error de Categoría", "No se pudo registrar", e.getMessage());
+            UIUtils.mostrarAlerta(AlertType.ERROR, "Error de Categoría", "No se pudo registrar", e.getMessage());
             if (e instanceof ErrorPersistenciaException) {
             	throw new IllegalStateException(e.getMessage(), e);
             }

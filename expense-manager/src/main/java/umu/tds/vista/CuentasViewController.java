@@ -8,6 +8,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.image.Image;
@@ -112,7 +113,7 @@ public class CuentasViewController implements IObservador {
         MiembroAux pagador = tablaMiembros.getSelectionModel().getSelectedItem();
 
         if (cuentaActual == null || pagador == null) {
-            mostrarAlerta("Selección necesaria", "Seleccione cuenta y pagador.");
+            UIUtils.mostrarAlerta(AlertType.WARNING, "Selección necesaria", null, "Seleccione cuenta y pagador.");
             return;
         }
 
@@ -122,19 +123,6 @@ public class CuentasViewController implements IObservador {
         ChoiceDialog<String> catDialog = new ChoiceDialog<>(categorias.get(0), categorias);
         catDialog.setTitle("Registrar Gasto");
         catDialog.setHeaderText("Seleccione categoría");
-        
-        try {
-            // Cargamos tu imagen personalizada desde la carpeta de recursos
-            Image img = new Image(App.class.getResourceAsStream("imagenes/interrogacion.png"));
-            ImageView iconView = new ImageView(img);
-            iconView.setFitHeight(48);
-            iconView.setFitWidth(48);
-            
-            // Asignamos el nuevo gráfico al diálogo
-            catDialog.setGraphic(iconView);
-        } catch (Exception e) {
-            System.err.println("No se pudo cargar la imagen personalizada para ChoiceDialog");
-        }
 
         catDialog.showAndWait().ifPresent(cat -> {
             TextInputDialog impDialog = new TextInputDialog("0.00");
@@ -146,18 +134,19 @@ public class CuentasViewController implements IObservador {
                     double importe = Double.parseDouble(strImp.replace(",", "."));
                     
                     if (!ctrl.isImporteValido(importe)) {
-                        mostrarAlerta("Importe no válido", "El importe debe ser mayor que cero.");
+                        UIUtils.mostrarAlerta(AlertType.WARNING, "Importe no válido", null, "El importe debe ser mayor que cero.");
                         return;
                     }
 
                     ctrl.registrarGastoEnCuenta(importe, LocalDate.now(), cat, pagador.getLogin(), cuentaActual);
-                    mostrarInformacion("Éxito", "Gasto registrado.");
+                    UIUtils.mostrarAlerta(AlertType.INFORMATION, "Éxito", null, "Gasto registrado.");
                 } catch (NumberFormatException e) {
-                    mostrarAlerta("Error", "Importe no válido.");
+                    UIUtils.mostrarAlerta(AlertType.WARNING, "Error", null, "Importe no válido.");
                 }
             });
         });
     }
+    
 
     @FXML
     private void handleAniadirUsuario() {
@@ -177,7 +166,7 @@ public class CuentasViewController implements IObservador {
         String estrategia = cbEstrategia.getValue();
 
         if (nombre.isEmpty() || miembrosTemp.isEmpty()) {
-            mostrarAlerta("Datos incompletos", "Debe dar un nombre y añadir miembros.");
+            UIUtils.mostrarAlerta(AlertType.WARNING, "Datos incompletos", null, "Debe dar un nombre y añadir miembros.");
             return;
         }
 
@@ -189,8 +178,7 @@ public class CuentasViewController implements IObservador {
 
             // Verificamos que sume 100 (con un pequeño margen de error por los decimales)
             if (Math.abs(sumaTotal - 100.0) > 0.01) {
-                mostrarAlerta("Error de Validación", 
-                    "Los porcentajes suman " + String.format("%.2f", sumaTotal) + "%. Deben sumar exactamente 100%.");
+                UIUtils.mostrarAlerta(AlertType.WARNING, "Error de Validación", null, "Los porcentajes suman " + String.format("%.2f", sumaTotal) + "%. Deben sumar exactamente 100%.");
                 return; // Cortamos la ejecución aquí
             }
         }
@@ -205,11 +193,11 @@ public class CuentasViewController implements IObservador {
             Configuracion.getInstancia().getControladorAppGastos()
                 .crearCuentaCompartida(nombre, estrategia, datos);
             
-            mostrarInformacion("Cuenta Creada", "La cuenta compartida se ha guardado correctamente.");
+            UIUtils.mostrarAlerta(AlertType.CONFIRMATION, "Cuenta Creada", null, "La cuenta compartida se ha guardado correctamente.");
             handleLimpiar(); // Limpiamos y restauramos al usuario actual
             
         } catch (Exception e) {
-            mostrarAlerta("Error", e.getMessage());
+            UIUtils.mostrarAlerta(AlertType.WARNING, "Error", null, e.getMessage());
         }
     }
 
@@ -270,11 +258,4 @@ public class CuentasViewController implements IObservador {
         public void setPorcentaje(Double porcentaje) { this.porcentaje = porcentaje; }
     }
 
-    private void mostrarAlerta(String t, String m) { 
-        UIUtils.mostrarAlertaWarning(t, null, m); 
-    }
-    
-    private void mostrarInformacion(String t, String m) { 
-        UIUtils.mostrarCheck(t, null, m); 
-    }
 }
