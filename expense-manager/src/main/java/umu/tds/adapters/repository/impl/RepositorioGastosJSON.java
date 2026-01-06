@@ -157,9 +157,12 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 	public Categoria getCategoria(String nombreBuscado) {
 	    if (nombreBuscado == null) return null;
 	    
+	    // Aseguramos que las categorías estén cargadas
+	    if (categorias == null) getCategorias();
+	    
 	    return categorias.stream()
-	            .filter(c -> c != null && c.getId() != null) // Evitamos nulos en la lista
-	            .filter(c -> c.getId().equals(nombreBuscado))
+	            .filter(c -> c != null && c.getId() != null) // Evitamos elementos corruptos
+	            .filter(c -> c.getId().equalsIgnoreCase(nombreBuscado)) // Búsqueda sin distinguir mayúsculas
 	            .findFirst()
 	            .orElse(null);
 	}

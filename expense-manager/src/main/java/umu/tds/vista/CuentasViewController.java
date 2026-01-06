@@ -10,7 +10,10 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.util.converter.DoubleStringConverter;
+import umu.tds.App;
 import umu.tds.Configuracion;
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.modelo.CuentaCompartida;
@@ -120,9 +123,26 @@ public class CuentasViewController implements IObservador {
         catDialog.setTitle("Registrar Gasto");
         catDialog.setHeaderText("Seleccione la categoría del gasto");
 
+        // --- PERSONALIZACIÓN DEL ICONO ---
+        try {
+            // Cargamos tu imagen personalizada desde la carpeta de recursos
+            Image img = new Image(App.class.getResourceAsStream("imagenes/interrogacion.png"));
+            ImageView iconView = new ImageView(img);
+            iconView.setFitHeight(48);
+            iconView.setFitWidth(48);
+            
+            // Asignamos el nuevo gráfico al diálogo
+            catDialog.setGraphic(iconView);
+        } catch (Exception e) {
+            System.err.println("No se pudo cargar la imagen personalizada para ChoiceDialog");
+        }
+        // ---------------------------------
+
         catDialog.showAndWait().ifPresent(cat -> {
             TextInputDialog impDialog = new TextInputDialog("0.00");
             impDialog.setHeaderText("Importe para " + cat);
+            
+            // Opcional: También puedes personalizar el icono del impDialog aquí de la misma forma
             
             impDialog.showAndWait().ifPresent(strImp -> {
                 try {

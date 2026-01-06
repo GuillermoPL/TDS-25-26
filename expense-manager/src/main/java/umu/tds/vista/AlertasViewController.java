@@ -38,7 +38,7 @@ public class AlertasViewController implements IObservador {
         String periodo = cbPeriodo.getValue();
         String categoriaSel = cbCategoria.getValue();
 
-        // 1. Validación de campos vacíos
+        // 1. Validación de campos obligatorios
         if (strLimite.isEmpty() || periodo == null || categoriaSel == null) {
             UIUtils.mostrarAlertaWarning("Campos incompletos", null, "Por favor, rellena todos los campos.");
             return;
@@ -53,16 +53,16 @@ public class AlertasViewController implements IObservador {
                 return;
             }
 
-            // Si elige "Todas", pasamos null como categoría
+            // Si elige "Todas", pasamos null como categoría al controlador
             String catParaControlador = categoriaSel.equals("Todas") ? null : categoriaSel;
             
             Configuracion.getInstancia().getControladorAppGastos()
                          .crearAlerta(limite, periodo, catParaControlador);
             
-            txtLimite.clear();
+            txtLimite.clear(); // Limpiamos la caja de texto tras el éxito
             
         } catch (NumberFormatException e) {
-            // 3. Usar la imagen error.png para fallos de formato
+            // Se dispara si el usuario introduce letras en el campo del límite
             UIUtils.mostrarAlertaError("Error de Formato", null, "El límite introducido debe ser un número válido.");
         }
     }
