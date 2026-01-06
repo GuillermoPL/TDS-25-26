@@ -21,6 +21,7 @@ import umu.tds.modelo.EstrategiaReparto;
 import umu.tds.modelo.FactoriaEstrategia;
 import umu.tds.modelo.Gasto;
 import umu.tds.modelo.IEstrategiaAlerta;
+import umu.tds.modelo.Notificacion;
 import umu.tds.modelo.Alerta;
 import umu.tds.modelo.Categoria;
 import umu.tds.modelo.EventoSistema;
@@ -177,7 +178,7 @@ public class ControladorAppGastos {
 	        this.notificarCambio(EventoSistema.SALDO_ACTUALIZADO, cuenta);
 	        
 	        // 6. Verificación de alertas globales
-	        verificarAlertas(nuevoGasto);
+	        verificarAlertas();
 
 	    } catch (Exception e) {
 	        e.printStackTrace();
@@ -194,15 +195,36 @@ public class ControladorAppGastos {
 		return cuenta.getSaldosPorUsuario();
 	}
 	
-	private void verificarAlertas(Gasto ultimoGasto) {
-	    List<Gasto> todos = repoGastos.getGastos();
-	    for (Alerta alerta : repoAlertas.getAlertas()) {
-	        // Solo verificamos alertas globales o de la categoría del gasto actual
-	        if (alerta.getCategoria() == null || alerta.getCategoria().equals(ultimoGasto.getCategoria())) {
-	            if (alerta.verificarSiSuperada(todos)) {
+	private void verificarAlertas() {
+	    List<Gasto> todosLosGastos = repoGastos.getGastos();
+	    List<Alerta> alertas = repoAlertas.getAlertas();
+
+	    for (Alerta alerta : alertas) {
+	        boolean superada = alerta.verificarSiSuperada(todosLosGastos);
+
+	        // Se supera el límite y NO habíamos avisado antes
+	        if (superada && !alerta.isFueNotificada()) {
+	            alerta.setFueNotificada(true); // Bloqueamos para que no repita
+	            
+	            try {
+	                repoAlertas.updateAlerta(alerta); // Guardamos que ya avisamos
+
+	                // Crear y guardar notificación en el historial
+	                String mensaje = "Límite de " + String.format("%.2f", alerta.getLimite()) + "€ superado";
+	                if (alerta.getCategoria() != null) {
+	                    mensaje += " en " + alerta.getCategoria().getId();
+	                }
+	                
+	                Notificacion n = new Notificacion(mensaje, LocalDate.now(), alerta);
+	                repoAlertas.addNotificacion(n);
+	                
+	                // Disparar evento para que la UI muestre el Alert
 	                this.notificarCambio(EventoSistema.ALERTA_DISPARADA, alerta);
+	                
+	            } catch (Exception e) {
+	                e.printStackTrace();
 	            }
-	        }
+	        } 
 	    }
 	}
 	
@@ -240,7 +262,7 @@ public class ControladorAppGastos {
 	        // 5. Notificación (Magia del patrón Observador)
 	        this.notificarCambio(EventoSistema.NUEVO_GASTO, nuevo);
 	        
-	        verificarAlertas(nuevo);
+	        verificarAlertas();
 	    } catch (umu.tds.adapters.repository.exceptions.ElementoExistenteException e) {
 	        System.err.println("Error: El ID del gasto ya existe.");
 	        e.printStackTrace();
@@ -277,7 +299,7 @@ public class ControladorAppGastos {
 	        // El objeto ya viene modificado de la vista (gracias al setGasto del controller)
 	        repoGastos.updateGasto(gasto); 
 	        this.notificarCambio(EventoSistema.GASTO_MODIFICADO, gasto);
-	        verificarAlertas(gasto);
+	        verificarAlertas();
 	    } catch (ErrorPersistenciaException e) {
 	        e.printStackTrace();
 	    }

@@ -11,6 +11,9 @@ public class Alerta {
 	
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private Categoria categoria = null;
+
+    // NUEVO: Atributo para controlar si ya se avisó al usuario para este periodo/estado
+    private boolean fueNotificada = false; 
 	
 	public Alerta() {
 		this(0.0, null);
@@ -19,6 +22,7 @@ public class Alerta {
 	public Alerta(double limite, IEstrategiaAlerta estrategia) {
 		this.limite = limite;
 		this.estrategia = estrategia;
+        this.fueNotificada = false; // Por defecto no ha sido notificada
 	}
 	
 	public Alerta(double limite, IEstrategiaAlerta estrategia, Categoria categoria) {
@@ -49,7 +53,15 @@ public class Alerta {
     public void setCategoria(Categoria categoria) {
     	this.categoria = categoria;
     }
-    
+
+    // NUEVOS MÉTODOS para el control de notificaciones
+    public boolean isFueNotificada() {
+        return fueNotificada;
+    }
+
+    public void setFueNotificada(boolean fueNotificada) {
+        this.fueNotificada = fueNotificada;
+    }
     
     public boolean verificarSiSuperada(List<Gasto> todosLosGastos) {
     	List<Gasto> gastosAAnalizar;
@@ -62,7 +74,16 @@ public class Alerta {
     										.collect(Collectors.toList());
     	}
     	
-    	return estrategia.verificar(gastosAAnalizar, this.limite);
+        // Comprobamos si se supera el límite mediante la estrategia (semanal/mensual)
+    	boolean superada = estrategia.verificar(gastosAAnalizar, this.limite);
+
+        // Si el total baja del límite (por ejemplo, al borrar un gasto), 
+        // reseteamos el estado para que pueda volver a saltar el aviso en el futuro.
+        if (!superada) {
+            this.fueNotificada = false;
+        }
+
+        return superada;
     }
 	
     @Override
@@ -71,5 +92,4 @@ public class Alerta {
         String textoCat = (categoria == null) ? "Todas" : categoria.toString();
         return String.format("Límite: %.2f€ | Periodo: %s | Cat: %s", limite, periodo, textoCat);
     }
-    
 }

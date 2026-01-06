@@ -12,11 +12,11 @@ public class App extends Application {
         Configuracion configuracion = new ConfiguracionImpl();
         Configuracion.setInstancia(configuracion);
         
-        // 2. INICIALIZAR DATOS: Ahora que 'configuracion' ya no es null para el Repo
+        // 2. Inicializar datos
         configuracion.getControladorAppGastos().inicializarDatos(); 
         
         // 3. Sesión de prueba
-        Usuario usuarioPrueba = new Usuario("pepe"); 
+        Usuario usuarioPrueba = new Usuario("yo"); 
         ControladorSesion.getInstancia().setUsuarioActual(usuarioPrueba);
         
         // 4. Mostrar interfaz
