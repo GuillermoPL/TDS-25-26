@@ -1,5 +1,7 @@
 package umu.tds.modelo;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -28,6 +30,12 @@ public class Usuario {
 	}
 	
 	@Override
+	public int hashCode() {
+	    // Usamos el id como identificador único
+	    return Objects.hash(this.id); 
+	}
+	
+	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
@@ -36,7 +44,7 @@ public class Usuario {
 		if (getClass() != obj.getClass())
 			return false;
 		Usuario other = (Usuario) obj;
-		return id.equals(other.id);
+		return Objects.equals(this.id, other.id);
 	}
 
 	public boolean isUsuario(String nombre) {

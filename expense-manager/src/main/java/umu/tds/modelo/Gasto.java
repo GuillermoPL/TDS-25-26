@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Gasto {
@@ -19,10 +20,8 @@ public class Gasto {
 	private Categoria categoria;
 	@JsonProperty("pagador")
 	private Usuario pagador;
-	
-	//TODO: POR AHORA IGNORO LA CUENTA
-	@JsonIgnore
-	private CuentaCompartida cuenta;
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private String cuenta;
 	
 	
 	public Gasto() {
@@ -43,7 +42,7 @@ public class Gasto {
 		this.fecha = fecha;
 	}
 	
-	public Gasto(String id, double importe, LocalDate fecha, Categoria categoria, Usuario pagador, CuentaCompartida cuenta) {
+	public Gasto(String id, double importe, LocalDate fecha, Categoria categoria, Usuario pagador, String cuenta) {
 		this(id, importe, fecha, categoria, pagador);
 		this.cuenta = cuenta;
 	}
@@ -92,11 +91,11 @@ public class Gasto {
 		this.pagador = pagador;
 	}
 
-	public CuentaCompartida getCuenta() {
+	public String getCuenta() {
 		return cuenta;
 	}
 
-	public void setCuenta(CuentaCompartida cuenta) {
+	public void setCuenta(String cuenta) {
 		this.cuenta = cuenta;
 	}
 	

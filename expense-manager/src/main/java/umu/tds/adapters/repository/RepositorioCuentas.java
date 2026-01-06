@@ -15,6 +15,8 @@ public interface RepositorioCuentas {
 	
 	public void addCuenta(CuentaCompartida cuenta) throws ElementoExistenteException, ErrorPersistenciaException;
 	
+	public void updateCuenta(CuentaCompartida cuenta) throws ErrorPersistenciaException;
+	
 	public List<Usuario> getUsuarios();
 	
 	public Usuario getUsuario(String nombre);
