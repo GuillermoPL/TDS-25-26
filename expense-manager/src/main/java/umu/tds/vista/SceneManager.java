@@ -118,13 +118,25 @@ public class SceneManager {
             FXMLLoader loader = new FXMLLoader(umu.tds.App.class.getResource("NuevoGastoView.fxml"));
             DialogPane pane = loader.load();
 
-            // Aquí está la magia: obtenemos el controlador del FXML y le pasamos el gasto
             NuevoGastoController controller = loader.getController();
             controller.setGasto(gasto); 
 
             Dialog<Void> dialog = new Dialog<>();
             dialog.setDialogPane(pane);
             dialog.setTitle("Editar Gasto");
+            
+            // --- CAMBIO NECESARIO AQUÍ ---
+            // 1. Añadimos el tipo de botón CLOSE para que la cruz (X) funcione
+            pane.getButtonTypes().add(ButtonType.CLOSE);
+            
+            // 2. Opcional: Para que no aparezca un botón feo abajo a la derecha, lo ocultamos.
+            // La cruz roja seguirá funcionando porque el ButtonType está registrado.
+            Node closeButton = pane.lookupButton(ButtonType.CLOSE);
+            if (closeButton != null) {
+                closeButton.setVisible(false);
+                closeButton.setManaged(false);
+            }
+
             dialog.initStyle(StageStyle.UTILITY);
             dialog.showAndWait();
         } catch (IOException e) {
