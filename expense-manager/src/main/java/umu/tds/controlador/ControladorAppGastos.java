@@ -245,31 +245,33 @@ public class ControladorAppGastos {
 	
 	public void registrarGasto(double importe, LocalDate fecha, String nombreCat) {
 	    try {
-	        // 1. Obtenemos el usuario de la sesión (Imprescindible para el modelo)
+	        // 1. Obtener el usuario de la sesión
 	        Usuario pagador = ControladorSesion.getInstancia().getUsuarioActual();
 	        
 	        if (pagador == null) {
 	            throw new RuntimeException("Error: No hay una sesión de usuario activa.");
 	        }
 
-	        // 2. Preparamos los datos
-	        String id = "G-" + System.currentTimeMillis();
+	        // 2. recuperar categoría
 	        Categoria cat = repoGastos.getCategoria(nombreCat);
-	        
-	        // 3. Creamos el objeto con su pagador real
+
+	        // 3. Crear el objeto Gasto con la categoría real
+	        String id = "G-" + System.currentTimeMillis();
 	        Gasto nuevo = new Gasto(id, importe, fecha, cat, pagador); 
 
-	        // 4. Persistencia
+	        // 4. Persistencia en el repositorio de gastos
 	        repoGastos.addGasto(nuevo);
 
-	        // 5. Notificación (Magia del patrón Observador)
+	        // 5. Notificar a los observadores para refrescar tablas
 	        this.notificarCambio(EventoSistema.NUEVO_GASTO, nuevo);
 	        
+	        // 6. Lanzar verificación de alertas globales
 	        verificarAlertas();
-	    } catch (umu.tds.adapters.repository.exceptions.ElementoExistenteException e) {
+
+	    } catch (ElementoExistenteException e) {
 	        System.err.println("Error: El ID del gasto ya existe.");
 	        e.printStackTrace();
-	    } catch (umu.tds.adapters.repository.exceptions.ErrorPersistenciaException e) {
+	    } catch (ErrorPersistenciaException e) {
 	        System.err.println("Error crítico al guardar en el archivo JSON.");
 	        e.printStackTrace();
 	    } catch (Exception e) {

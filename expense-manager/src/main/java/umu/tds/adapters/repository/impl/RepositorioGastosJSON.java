@@ -154,18 +154,14 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 		return categorias;
 	}
 
-	@Override
-	public Categoria getCategoria(String nombreCat) {
-		if (categorias == null) {
-			getCategorias();
-		}
-		Categoria categoria = null;
-		for (Categoria c : categorias) {
-			if (categoria.equals(c)) {
-				categoria = c;
-			}
-		}
-		return categoria;
+	public Categoria getCategoria(String nombreBuscado) {
+	    if (nombreBuscado == null) return null;
+	    
+	    return categorias.stream()
+	            .filter(c -> c != null && c.getId() != null) // Evitamos nulos en la lista
+	            .filter(c -> c.getId().equals(nombreBuscado))
+	            .findFirst()
+	            .orElse(null);
 	}
 
 	@Override
