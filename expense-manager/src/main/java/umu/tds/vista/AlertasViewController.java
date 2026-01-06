@@ -6,6 +6,9 @@ import umu.tds.Configuracion;
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.modelo.Alerta;
 import umu.tds.modelo.EventoSistema;
+import umu.tds.modelo.Notificacion;
+
+import java.util.List;
 import java.util.Optional;
 
 public class AlertasViewController implements IObservador {
@@ -22,7 +25,6 @@ public class AlertasViewController implements IObservador {
         cbPeriodo.getItems().addAll("Semanal", "Mensual");
         cbPeriodo.setValue("Mensual");
 
-        // Cargamos categorías y añadimos opción global
         cbCategoria.getItems().add("Todas");
         cbCategoria.getItems().addAll(ctrl.getNombreCategorias());
         cbCategoria.setValue("Todas");
@@ -58,16 +60,21 @@ public class AlertasViewController implements IObservador {
         Configuracion.getInstancia().getControladorAppGastos().eliminarAlerta(seleccionada);
         refrescarLista();
     }
+    
+    @FXML
+    private void handleVerHistorial() {
+        Configuracion.getInstancia().getSceneManager().showHistorialNotificaciones();
+    }
 
     private void refrescarLista() {
-        listaAlertas.getItems().setAll(
-            Configuracion.getInstancia().getControladorAppGastos().getAlertas()
-        );
+        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+        listaAlertas.getItems().setAll(ctrl.getAlertas());
     }
 
     @Override
     public void actualizar(EventoSistema evento, Object datos) {
-        if (evento == EventoSistema.NUEVA_ALERTA) {
+        // Si hay una nueva alerta o se dispara una, refrescamos
+        if (evento == EventoSistema.NUEVA_ALERTA || evento == EventoSistema.ALERTA_DISPARADA) {
             javafx.application.Platform.runLater(() -> refrescarLista());
         }
     }

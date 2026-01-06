@@ -133,4 +133,10 @@ public class SceneManager {
     }
     
     
+    // HU 3.3 historial de notificaciones
+    public void showHistorialNotificaciones() {
+        cargarYMostrarDialogo("HistorialNotificacionesView", "Historial de Notificaciones");
+    }
+    
+    
 }

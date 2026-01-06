@@ -228,6 +228,10 @@ public class ControladorAppGastos {
 	    }
 	}
 	
+	public List<Notificacion> getHistorialNotificaciones() {
+	    return repoAlertas.getNotificaciones();
+	}
+	
 	public List<String> getNombreCategorias() {
 	    Set<String> nombres = repoGastos.getGastos().stream()
 	            .map(g -> g.getCategoria().toString())

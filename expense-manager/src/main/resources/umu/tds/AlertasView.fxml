@@ -18,7 +18,7 @@
                </font>
             </Label>
 
-            <HBox spacing="15.0" alignment="CENTER_LEFT" style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;">
+            <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;">
                <children>
                   <VBox spacing="5.0">
                      <children>
@@ -32,14 +32,12 @@
                         <ComboBox fx:id="cbPeriodo" prefWidth="150.0" />
                      </children>
                   </VBox>
-                  
                   <VBox spacing="5.0">
                      <children>
                         <Label text="Categoría:" />
                         <ComboBox fx:id="cbCategoria" prefWidth="150.0" />
                      </children>
                   </VBox>
-
                   <Button onAction="#handleCrearAlerta" style="-fx-background-color: #2196f3; -fx-text-fill: white;" text="Establecer Alerta">
                      <HBox.margin>
                         <Insets top="20.0" />
@@ -48,11 +46,16 @@
                </children>
             </HBox>
 
-            <Label text="Alertas Activas" style="-fx-font-weight: bold;" />
+            <Label style="-fx-font-weight: bold;" text="Alertas Activas" />
+            
             <ListView fx:id="listaAlertas" VBox.vgrow="ALWAYS" />
             
-            <HBox alignment="CENTER_RIGHT">
+            <HBox alignment="CENTER_RIGHT" spacing="10.0">
                <children>
+                  <Button onAction="#handleVerHistorial" style="-fx-background-color: #607d8b; -fx-text-fill: white;" text="Ver Historial de Notificaciones" />
+                  
+                  <Separator orientation="VERTICAL" />
+                  
                   <Button onAction="#handleEliminarAlerta" style="-fx-background-color: #f44336; -fx-text-fill: white;" text="Eliminar Alerta Seleccionada" />
                </children>
             </HBox>
