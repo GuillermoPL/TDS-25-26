@@ -12,7 +12,7 @@ Curso académico: 2025-2026.
 
 ---
 
-## 👥 Equipo de Desarrollo (Subgrupo 1.3)
+## 👥 Equipo de Desarrollo
 
 | Nombre | Email | Subgrupo |
 | :--- | :--- | :--- |
@@ -45,7 +45,7 @@ Hemos implementado los siguientes patrones para garantizar la escalabilidad y ma
 
 | Patrón | Implementación en el Proyecto |
 | :--- | :--- |
-| **Singleton** | Gestión única de la sesión (`ControladorSesion`) y factorías (`FactoriaEstrategia`, `FactoriaImportadores`). Implementación *Eager* para garantizar Thread-Safety. |
+| **Singleton** | Gestión única de la sesión (`ControladorSesion`) y factorías (`FactoriaEstrategia`, `FactoriaImportadores`). |
 | **Strategy** | Algoritmos intercambiables para el reparto de gastos (`RepartoEquitativo`, `RepartoPorcentual`) y lógica temporal de alertas (`EstrategiaAlertaMensual`, `EstrategiaAlertaSemanal`). |
 | **Factory Method** | Creación dinámica de estrategias e importadores según el contexto, desacoplando la instanciación de la lógica de negocio. |
 | **Observer** | Comunicación reactiva: El `ControladorAppGastos` notifica automáticamente a las Vistas (`IObservador`) cuando hay cambios en el modelo (nuevos gastos, alertas disparadas). |
@@ -59,13 +59,17 @@ Hemos implementado los siguientes patrones para garantizar la escalabilidad y ma
 
 ---
 
-## 📊 Diagrama de Clases
+## 📊 Diagramas de Arquitectura
 
-La siguiente imagen refleja la arquitectura actual del sistema (MVC + Patrones):
+### Diagrama de Clases
+Refleja la estructura estática del sistema y las relaciones entre capas.
 
 ![Diagrama de Clases UML](./docs/imagenes/diagrama_clases.png)
 
-> *El diagrama completo muestra las relaciones entre Controladores, Modelos y Vistas, destacando la implementación de los patrones Strategy y Observer.*
+### Diagrama de Secuencia (Caso de Uso: Alertas)
+Muestra la interacción dinámica al registrar un gasto y disparar una notificación.
+
+![Diagrama de Secuencia](./docs/imagenes/diagrama_secuencia.png)
 
 ---
 
@@ -75,19 +79,28 @@ La siguiente imagen refleja la arquitectura actual del sistema (MVC + Patrones):
 * **Java JDK 21** (Obligatorio).
 * **Maven 3.8+**.
 
-### Pasos para ejecutar
+### Opción A: Interfaz Gráfica (JavaFX)
+Es el modo principal de la aplicación.
+
 1.  **Clonar el repositorio:**
     ```bash
     git clone [https://github.com/GuillermoPL/TDS-25-26.git](https://github.com/GuillermoPL/TDS-25-26.git)
     cd TDS-25-26
     ```
-2.  **Compilar y Ejecutar (Maven):**
+2.  **Compilar y Ejecutar:**
     ```bash
     mvn clean javafx:run
     ```
-3.  **Desde Eclipse / IntelliJ:**
-    * Importar el directorio como "Maven Project".
-    * Ejecutar la clase principal: `umu.tds.App`.
+
+### Opción B: Modo Consola (CLI)
+Incluimos una interfaz de línea de comandos para mantenimiento y pruebas rápidas del modelo sin cargar la GUI.
+
+1.  **Ejecutar comando Maven:**
+    ```bash
+    mvn exec:java -Dexec.mainClass="umu.tds.MainCLI"
+    ```
+2.  **Menú Interactivo:**
+    El sistema iniciará sesión automáticamente con un usuario de prueba y permitirá listar, crear y borrar gastos personales.
 
 ---
 
