@@ -23,19 +23,23 @@
                </font>
             </Label>
 
-            <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color: #eeeeee; -fx-padding: 10; -fx-background-radius: 5;">
-               <children>
-                  <Label text="Desde:" />
-                  <DatePicker fx:id="dpDesde" prefWidth="120.0" promptText="dd/mm/aaaa" />
-                  <Label text="Hasta:" />
-                  <DatePicker fx:id="dpHasta" prefWidth="120.0" promptText="dd/mm/aaaa" />
-                  <Separator orientation="VERTICAL" />
-                  <Label text="Categoría:" />
-                  <ComboBox fx:id="cbCategoria" prefWidth="150.0" />
-                  <Button mnemonicParsing="false" onAction="#handleFiltrar" style="-fx-background-color: #2196f3; -fx-text-fill: white;" text="Filtrar" />
-                  <Button mnemonicParsing="false" onAction="#handleLimpiarFiltros" text="Limpiar" />
-               </children>
-            </HBox>
+<HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color: #eeeeee; -fx-padding: 10; -fx-background-radius: 5;">
+   <children>
+      <Label text="Rango:" />
+      <DatePicker fx:id="dpDesde" prefWidth="100.0" promptText="Desde" />
+      <DatePicker fx:id="dpHasta" prefWidth="100.0" promptText="Hasta" />
+      
+      <Separator orientation="VERTICAL" />
+      
+      <MenuButton fx:id="mbMeses" mnemonicParsing="false" text="Meses (Todos)" />
+      <MenuButton fx:id="mbCategorias" mnemonicParsing="false" text="Categorías (Todas)" />
+      
+      <Separator orientation="VERTICAL" />
+      
+      <Button mnemonicParsing="false" onAction="#handleFiltrar" style="-fx-background-color: #2196f3; -fx-text-fill: white;" text="Filtrar" />
+      <Button mnemonicParsing="false" onAction="#handleLimpiarFiltros" text="Limpiar" />
+   </children>
+</HBox>
 
             <TableView fx:id="tablaGastos" VBox.vgrow="ALWAYS">
                <columns>
