@@ -93,7 +93,6 @@ public class RepositorioAlertasJSON implements RepositorioAlertas {
 		}
 		// Si la alerta ya existe no puedo insertarlo
 		if (alertas.contains(alerta)) {
-			// TODO: Describir mejor el error de que ya esté la alerta registrada
 			throw new ElementoExistenteException("La alerta ya ha sido registrada");
 		}
 		alertas.add(alerta);
@@ -165,7 +164,6 @@ public class RepositorioAlertasJSON implements RepositorioAlertas {
 			getNotificaciones(); // Carga inicial
 		}
 		if (notificaciones.contains(notificacion)) {
-			// TODO: Describir mejor el error de que ya esté la notificación registrada
 			throw new ElementoExistenteException("La notificación ya ha sido registrada");
 		}
 		notificaciones.add(notificacion);

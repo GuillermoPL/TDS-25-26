@@ -80,4 +80,9 @@ public class CuentaCompartida {
     public Map<Usuario, Double> getPorcentajesEstrategia() {
         return estrategia.getPorcentajes(); 
     }
+
+	public boolean yaTieneGasto(Gasto gasto) {
+		return getGastos().stream()
+						.anyMatch(g -> g.getId().equals(gasto.getId()));
+	}
 }

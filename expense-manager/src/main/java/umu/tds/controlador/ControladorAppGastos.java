@@ -394,8 +394,7 @@ public class ControladorAppGastos {
 	                    gasto.setCuenta(cuentaReal.getNombre());
 
 	                    // Comprobamos si la cuenta YA tiene este gasto para no duplicar deuda
-	                    boolean yaVinculado = cuentaReal.getGastos().stream()
-	                                            .anyMatch(g -> g.getId().equals(gasto.getId()));
+	                    boolean yaVinculado = cuentaReal.yaTieneGasto(gasto);
 
 	                    if (!yaVinculado) {
 	                        cuentaReal.addGasto(gasto);

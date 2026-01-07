@@ -86,7 +86,6 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 	public void addGasto(Gasto gasto) throws ElementoExistenteException, ErrorPersistenciaException{
 		// Si el producto ya existe no puedo insertarlo
 		if (gastos.contains(gasto)) {
-			// TODO: Describir mejor el error de que ya esté el gasto registrado
 			throw new ElementoExistenteException("El gasto ya ha sido registrado");
 		}
 		gastos.add(gasto);
@@ -173,7 +172,6 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 		}
 		// Si el producto ya existe no puedo insertarlo
 		if (categorias.contains(categoria)) {
-			// TODO: Describir mejor el error de que ya esté la categoria registrada
 			throw new ElementoExistenteException("La categoría ya ha sido registrada");
 		}
 		categorias.add(categoria);
