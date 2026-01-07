@@ -50,13 +50,18 @@
                </columnResizePolicy>
             </TableView>
 
-            <HBox alignment="CENTER_RIGHT" spacing="10.0">
-               <children>
-                  <Button mnemonicParsing="false" onAction="#handleNuevoGasto" prefWidth="120.0" style="-fx-background-color: #4caf50; -fx-text-fill: white;" text="Nuevo Gasto" />
-                  <Button mnemonicParsing="false" onAction="#handleEditarGasto" prefWidth="100.0" text="Editar" />
-                  <Button mnemonicParsing="false" onAction="#handleBorrarGasto" prefWidth="100.0" style="-fx-background-color: #f44336; -fx-text-fill: white;" text="Borrar" />
-               </children>
-            </HBox>
+<HBox alignment="CENTER_RIGHT" spacing="10.0">
+   <children>
+      <Button mnemonicParsing="false" onAction="#handleImportarGastos" 
+              prefWidth="120.0" 
+              style="-fx-background-color: #9c27b0; -fx-text-fill: white;" 
+              text="Importar CSV" />
+              
+      <Button mnemonicParsing="false" onAction="#handleNuevoGasto" prefWidth="120.0" style="-fx-background-color: #4caf50; -fx-text-fill: white;" text="Nuevo Gasto" />
+      <Button mnemonicParsing="false" onAction="#handleEditarGasto" prefWidth="100.0" text="Editar" />
+      <Button mnemonicParsing="false" onAction="#handleBorrarGasto" prefWidth="100.0" style="-fx-background-color: #f44336; -fx-text-fill: white;" text="Borrar" />
+   </children>
+</HBox>
          </children>
       </VBox>
    </center>

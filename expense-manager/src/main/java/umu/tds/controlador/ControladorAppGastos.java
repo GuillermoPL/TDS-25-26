@@ -329,59 +329,64 @@ public class ControladorAppGastos {
 	    }
 	}
 	
-	public void importarGastos(String rutaFichero) throws ImportacionException{
+
+	public void importarGastos(String rutaFichero) throws ImportacionException {
 	    try {
-	    	ImportadorGastos importador = FactoriaImportadores.getInstancia().crearImportador(rutaFichero);
-	    	
-	        // 1. El importador nos da el mapa crudo con objetos temporales
+	        ImportadorGastos importador = FactoriaImportadores.getInstancia().crearImportador(rutaFichero);
+	        
+	        // 1. Obtener datos crudos
 	        Map<String, List<Gasto>> mapa = importador.leerGastos(rutaFichero);
 
-	        // Recorremos las cuentas que venían en el CSV
 	        for (String nombreCuenta : mapa.keySet()) {
 	            
-	            // Buscamos la CUENTA REAL (en caso de que no sea la cuenta personal)
+	            // 2. Gestionar Cuentas Compartidas
 	            CuentaCompartida cuentaReal = repoCuentas.getCuenta(nombreCuenta);
 	            if (!nombreCuenta.equals("Personal") && cuentaReal == null) {
-	                throw new ImportacionException("No existe la cuenta " + nombreCuenta +".");
+	                // Opción A: Error si no existe
+	                throw new ImportacionException("No existe la cuenta compartida: " + nombreCuenta);
+	                // Opción B: Podrías crearla aquí automáticamente si quisieras
 	            }
 
-	            // B. Procesamos los gastos de esa cuenta
 	            List<Gasto> gastosNuevos = mapa.get(nombreCuenta);
 	            
 	            for (Gasto gasto : gastosNuevos) {
-	                
-	                // 1. Sacamos la categoría temporal que creó el importador
+	                // 3. Reconciliación de Categorías (Evitar duplicados)
 	                Categoria catFantasma = gasto.getCategoria();
-	                
-	                // 2. Preguntamos al Repo si ya existe una con ese nombre
-	                // (Asumo que tienes un método buscarPorNombre o getCategorias() y filtras)
 	                Categoria catReal = repoGastos.getCategoria(catFantasma.getId());
 	                
 	                if (catReal != null) {
-	                    // Si ya existía:
-	                    // Tiramos la temporal y le ponemos la real al gasto.
-	                    gasto.setCategoria(catReal);
-	                    
+	                    gasto.setCategoria(catReal); // Usar existente
 	                } else {
-	                    // Si no existía (es nueva)
-	                    // La registramos en el sistema.
-	                    repoGastos.addCategoria(catFantasma);
-	                    // El gasto se queda con ella (ahora ya es real).
+	                    repoGastos.addCategoria(catFantasma); // Registrar nueva
+	                    // Notificar que hay nueva categoría para actualizar desplegables
+	                    this.notificarCambio(EventoSistema.NUEVA_CATEGORIA, catFantasma.getId());
 	                }
 
-	                // 3. Finalmente, añadimos el gasto limpio a la cuenta y viceversa, en caso
-	                //    de que esta no sea la cuenta personal.
+	                // 4. Asignar a cuenta compartida si procede
 	                if (!nombreCuenta.equals("Personal")) {
-	                	gasto.setCuenta(cuentaReal.getNombre());
-	                	cuentaReal.addGasto(gasto);
+	                    gasto.setCuenta(cuentaReal.getNombre());
+	                    cuentaReal.addGasto(gasto);
+	                    // IMPORTANTE: Actualizar la cuenta en persistencia
+	                    repoCuentas.updateCuenta(cuentaReal); 
+	                }
+
+	                // 5. PERSISTENCIA DEL GASTO
+	                // Tanto si es personal como compartido, el gasto debe existir en el repo de gastos
+	                try {
+	                    repoGastos.addGasto(gasto);
+	                } catch (ElementoExistenteException e) {
+	                    System.err.println("Gasto duplicado en importación, saltando: " + gasto.getId());
+	                    continue; 
 	                }
 	            }
 	        }
 	        
-	        System.out.println("Importación finalizada y reconciliada.");
+	        // Notificar al final para refrescar la tabla de golpe
+	        this.notificarCambio(EventoSistema.NUEVO_GASTO, null); // null o una lista si quisieras optimizar
+	        System.out.println("Importación finalizada.");
 
 	    } catch (Exception e) {
-	        e.printStackTrace();
+	        throw new ImportacionException("Error en el proceso de importación: " + e.getMessage());
 	    }
 	}
 	public boolean isImporteValido(double importe) {
