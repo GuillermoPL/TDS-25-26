@@ -329,7 +329,6 @@ public class ControladorAppGastos {
 	    }
 	}
 	
-	// En umu.tds.controlador.ControladorAppGastos
 
 	public void importarGastos(String rutaFichero) throws ImportacionException {
 	    try {
