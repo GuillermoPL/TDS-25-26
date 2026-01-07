@@ -76,7 +76,7 @@
 ---
 
 ## Épica 2: Visualización y Filtrado de Datos
-[cite_start]Esta épica cubre las diferentes formas de presentar la información y cómo filtrarla[cite: 53, 54].
+Esta épica cubre las diferentes formas de presentar la información y cómo filtrarla.
 
 > ### 📋 HU 2.1: Consultar gastos en lista/tabla
 > **Como** usuario,  
@@ -114,7 +114,7 @@
 ---
 
 ## Épica 3: Sistema de Alertas
-[cite_start]Cubre la configuración y notificación de límites de gasto[cite: 79, 80].
+Cubre la configuración y notificación de límites de gasto.
 
 > ### ⚙️ HU 3.1: Configurar alerta de gasto
 > **Como** usuario,  
@@ -177,7 +177,7 @@
 ---
 
 ## Épica 5: Importación
-[cite_start]Cubre los requisitos de la importación de ficheros[cite: 122, 123].
+Cubre los requisitos de la importación de ficheros.
 
 > ### 📥 HU 5.1: Importar gastos desde fichero externo
 > **Como** usuario,  
