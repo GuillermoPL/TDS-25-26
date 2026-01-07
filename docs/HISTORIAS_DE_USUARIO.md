@@ -27,7 +27,7 @@
 ---
 
 ## Épica 1: Gestión de Gastos (CRUD)
-[cite_start]Esta épica cubre el registro, modificación y borrado de gastos y categorías, además de la gestión de los gastos desde la línea de comandos[cite: 17, 18].
+Esta épica cubre el registro, modificación y borrado de gastos y categorías, además de la gestión de los gastos desde la línea de comandos.
 
 > ### 📝 HU 1.1: Registrar nuevo gasto (GUI)
 > **Como** usuario de la aplicación,  
@@ -144,7 +144,7 @@ Cubre la configuración y notificación de límites de gasto.
 ---
 
 ## Épica 4: Cuentas Compartidas
-[cite_start]Cubre la gestión de gastos entre varias personas en cuentas compartidas[cite: 99, 100].
+Cubre la gestión de gastos entre varias personas en cuentas compartidas.
 
 > ### 👥 HU 4.1: Crear cuenta de gasto compartida
 > **Como** usuario,  
