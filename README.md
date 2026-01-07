@@ -14,11 +14,11 @@ Curso académico: 2025-2026.
 
 ## 👥 Equipo de Desarrollo (Subgrupo 1.3)
 
-| Nombre | Email | Rol Principal |
+| Nombre | Email | Subgrupo |
 | :--- | :--- | :--- |
-| **Jorge Torralba Santa Cruz** | `jorge.torralbas@um.es` | Backend & Persistencia |
-| **Juan Paredes Pardines** | `juan.paredesp@um.es` | Frontend (JavaFX) |
-| **Guillermo Fulgencio Parra López** | `gf.parralopez@um.es` | Arquitectura & Controladores |
+| **Jorge Torralba Santa Cruz** | `jorge.torralbas@um.es` | 1.3 |
+| **Juan Paredes Pardines** | `juan.paredesp@um.es` | 1.3 |
+| **Guillermo Fulgencio Parra López** | `gf.parralopez@um.es` | 1.3 |
 
 ---
 
