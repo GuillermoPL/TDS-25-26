@@ -202,7 +202,7 @@ public class CuentasViewController implements IObservador {
             Configuracion.getInstancia().getControladorAppGastos()
                 .crearCuentaCompartida(nombre, estrategia, datos);
             
-            UIUtils.mostrarAlerta(AlertType.CONFIRMATION, "Cuenta Creada", null, "La cuenta compartida se ha guardado correctamente.");
+            UIUtils.mostrarAlerta(AlertType.INFORMATION, "Cuenta Creada", null, "La cuenta compartida se ha guardado correctamente.");
             handleLimpiar(); // Limpiamos y restauramos al usuario actual
             
         } catch (Exception e) {
