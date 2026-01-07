@@ -10,14 +10,11 @@ import umu.tds.modelo.Usuario;
 
 public class MainCLI {
     public static void main(String[] args) {
-        // 1. Inicializar el sistema
-        Configuracion config = new ConfiguracionImpl();
-        Configuracion.setInstancia(config);
-        ControladorAppGastos ctrl = config.getControladorAppGastos();
+    	 Configuracion config = new ConfiguracionImpl();
+         Configuracion.setInstancia(config);
+         ControladorAppGastos ctrl = config.getControladorAppGastos();
 
-        // 2. Simular login (CLI User)
-        // Esto es vital para que registrarGasto no falle por falta de usuario
-        Usuario usuarioCli = new Usuario("cli_user");
+        Usuario usuarioCli = new Usuario("yo");
         ControladorSesion.getInstancia().setUsuarioActual(usuarioCli);
 
         Scanner scanner = new Scanner(System.in);
@@ -29,7 +26,8 @@ public class MainCLI {
             System.out.println("\n--- MENÚ ---");
             System.out.println("1. Ver todos los gastos");
             System.out.println("2. Registrar nuevo gasto");
-            System.out.println("3. Borrar un gasto (por ID)");
+            System.out.println("3. Editar un gasto (por ID)");
+            System.out.println("4. Borrar un gasto (por ID)");
             System.out.println("0. Salir");
             System.out.print("Selecciona una opción: ");
 
@@ -41,7 +39,6 @@ public class MainCLI {
                     if (gastos.isEmpty()) {
                         System.out.println("No hay gastos registrados.");
                     } else {
-                        // Imprimimos con ID para poder borrarlos luego
                         System.out.println("Listado de gastos:");
                         for (Gasto g : gastos) {
                             System.out.println(" > [" + g.getId() + "] " 
@@ -55,32 +52,66 @@ public class MainCLI {
                     try {
                         System.out.print("Importe: ");
                         double imp = Double.parseDouble(scanner.nextLine());
-                        
                         System.out.print("Categoría: ");
                         String cat = scanner.nextLine();
                         
-                        // Usamos LocalDate.now() por simplicidad, como en tu hint
-                        ctrl.registrarGasto(imp, LocalDate.now(), cat);
-                        System.out.println("✅ ¡Gasto registrado correctamente!");
+                        // VALIDACIONES
+                        if (!ctrl.isImporteValido(imp)) {
+                            System.out.println("Error: El importe debe ser mayor que cero.");
+                        } else if (!ctrl.categoriaExists(cat)) {
+                            System.out.println("Error: La categoría '" + cat + "' no existe.");
+                        } else {
+                            ctrl.registrarGasto(imp, LocalDate.now(), cat);
+                            System.out.println("¡Gasto registrado correctamente!");
+                        }
                     } catch (NumberFormatException e) {
-                        System.out.println("❌ Error: El importe debe ser un número.");
-                    } catch (Exception e) {
-                        System.out.println("❌ Error al guardar: " + e.getMessage());
+                        System.out.println("Error: El importe debe ser un número.");
                     }
                     break;
 
-                case "3":
-                    System.out.print("Introduce el ID del gasto a borrar (ej: G-173...): ");
+                case "3": // EDITAR GASTO
+                    System.out.print("ID del gasto a editar: ");
+                    String idEditar = scanner.nextLine();
+                    List<Gasto> paraEditar = ctrl.getGastosPorCondicion(g -> g.getId().equals(idEditar));
+
+                    if (!paraEditar.isEmpty()) {
+                        Gasto g = paraEditar.get(0);
+                        try {
+                            System.out.print("Nuevo importe (actual: " + g.getImporte() + "): ");
+                            double nuevoImp = Double.parseDouble(scanner.nextLine());
+                            
+                            System.out.print("Nueva categoría (actual: " + g.getCategoria().getId() + "): ");
+                            String nuevaCat = scanner.nextLine();
+
+                            // VALIDACIONES
+                            if (!ctrl.isImporteValido(nuevoImp)) {
+                                System.out.println("Error: El nuevo importe debe ser mayor que cero.");
+                            } else if (!ctrl.categoriaExists(nuevaCat)) {
+                                System.out.println("Error: La categoría '" + nuevaCat + "' no existe.");
+                            } else {
+                                g.setImporte(nuevoImp);
+                                g.setCategoria(new umu.tds.modelo.Categoria(nuevaCat));
+                                ctrl.modificarGasto(g);
+                                System.out.println("Gasto modificado con éxito.");
+                            }
+                        } catch (NumberFormatException e) {
+                            System.out.println("Error: Importe no válido.");
+                        }
+                    } else {
+                        System.out.println("ID no encontrado.");
+                    }
+                    break;
+
+                case "4": // BORRAR GASTO
+                    System.out.print("ID del gasto a borrar: ");
                     String idBorrar = scanner.nextLine();
-                    
-                    // Buscamos el objeto Gasto real usando el filtro del controlador
                     List<Gasto> encontrados = ctrl.getGastosPorCondicion(g -> g.getId().equals(idBorrar));
                     
                     if (!encontrados.isEmpty()) {
                         ctrl.eliminarGasto(encontrados.get(0));
-                        System.out.println("🗑️ Gasto eliminado.");
+                        System.out.println("Gasto eliminado.");
                     } else {
-                        System.out.println("⚠️ No se encontró ningún gasto con ese ID.");
+                        System.out.println("No se encontró ningún gasto con ese ID.");
                     }
                     break;
 
@@ -96,4 +127,5 @@ public class MainCLI {
         System.out.println("Fin de la ejecución CLI.");
         scanner.close();
     }
-}
+} 
+ 
