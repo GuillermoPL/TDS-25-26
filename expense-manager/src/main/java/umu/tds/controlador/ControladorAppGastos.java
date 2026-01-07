@@ -330,63 +330,86 @@ public class ControladorAppGastos {
 	}
 	
 
-	public void importarGastos(String rutaFichero) throws ImportacionException {
+	public int importarGastos(String rutaFichero) throws ImportacionException {
+	    int gastosIgnorados = 0; // Contador total de problemas
+
 	    try {
 	        ImportadorGastos importador = FactoriaImportadores.getInstancia().crearImportador(rutaFichero);
-	        
-	        // 1. Obtener datos crudos
 	        Map<String, List<Gasto>> mapa = importador.leerGastos(rutaFichero);
-
+	        
 	        for (String nombreCuenta : mapa.keySet()) {
+	            List<Gasto> gastosAProcesar = mapa.get(nombreCuenta);
 	            
-	            // 2. Gestionar Cuentas Compartidas
-	            CuentaCompartida cuentaReal = repoCuentas.getCuenta(nombreCuenta);
-	            if (!nombreCuenta.equals("Personal") && cuentaReal == null) {
-	                // Opción A: Error si no existe
-	                throw new ImportacionException("No existe la cuenta compartida: " + nombreCuenta);
-	                // Opción B: Podrías crearla aquí automáticamente si quisieras
+	            // --- VALIDACIÓN 1: Existencia de la Cuenta ---
+	            CuentaCompartida cuentaReal = null;
+	            if (!nombreCuenta.equals("Personal")) {
+	                cuentaReal = repoCuentas.getCuenta(nombreCuenta);
+	                if (cuentaReal == null) {
+	                    System.err.println("AVISO: La cuenta '" + nombreCuenta + "' no existe en el sistema. Se ignoran " + gastosAProcesar.size() + " gastos.");
+	                    gastosIgnorados += gastosAProcesar.size();
+	                    continue; // Saltamos a la siguiente cuenta del mapa, ignorando estos gastos
+	                }
 	            }
 
-	            List<Gasto> gastosNuevos = mapa.get(nombreCuenta);
-	            
-	            for (Gasto gasto : gastosNuevos) {
-	                // 3. Reconciliación de Categorías (Evitar duplicados)
+	            for (Gasto gasto : gastosAProcesar) {
+	                
+	                // --- VALIDACIÓN 2: Pertenencia del Pagador (Solo para cuentas compartidas) ---
+	                if (cuentaReal != null) {
+	                    // Verificamos si el pagador del CSV está en la lista de usuarios de la cuenta real
+	                    // Usamos streams para comparar por login (String) y evitar problemas de objetos distintos
+	                    String loginPagadorCSV = gasto.getPagador().getLogin();
+	                    
+	                    boolean esMiembro = cuentaReal.getSaldosPorUsuario().keySet().stream()
+	                            .anyMatch(u -> u.getLogin().equalsIgnoreCase(loginPagadorCSV));
+	                    
+	                    if (!esMiembro) {
+	                        System.err.println("AVISO: El usuario '" + loginPagadorCSV + "' no pertenece a la cuenta '" + nombreCuenta + "'. Gasto ignorado.");
+	                        gastosIgnorados++;
+	                        continue; // Saltamos este gasto
+	                    }
+	                }
+
+	                // --- PROCESAMIENTO NORMAL (Si pasa las validaciones) ---
+
+	                // 1. Gestión de Categorías
 	                Categoria catFantasma = gasto.getCategoria();
 	                Categoria catReal = repoGastos.getCategoria(catFantasma.getId());
-	                
 	                if (catReal != null) {
-	                    gasto.setCategoria(catReal); // Usar existente
+	                    gasto.setCategoria(catReal);
 	                } else {
-	                    repoGastos.addCategoria(catFantasma); // Registrar nueva
-	                    // Notificar que hay nueva categoría para actualizar desplegables
+	                    repoGastos.addCategoria(catFantasma);
 	                    this.notificarCambio(EventoSistema.NUEVA_CATEGORIA, catFantasma.getId());
 	                }
 
-	                // 4. Asignar a cuenta compartida si procede
-	                if (!nombreCuenta.equals("Personal")) {
-	                    gasto.setCuenta(cuentaReal.getNombre());
-	                    cuentaReal.addGasto(gasto);
-	                    // IMPORTANTE: Actualizar la cuenta en persistencia
-	                    repoCuentas.updateCuenta(cuentaReal); 
-	                }
-
-	                // 5. PERSISTENCIA DEL GASTO
-	                // Tanto si es personal como compartido, el gasto debe existir en el repo de gastos
+	                // 2. Persistencia General
 	                try {
 	                    repoGastos.addGasto(gasto);
 	                } catch (ElementoExistenteException e) {
-	                    System.err.println("Gasto duplicado en importación, saltando: " + gasto.getId());
-	                    continue; 
+	                    System.out.println("Info: Gasto duplicado (ID: " + gasto.getId() + "). Se omite del repositorio.");
+	                    gastosIgnorados++;
+	                }
+
+	                // 3. Vinculación a Cuenta Compartida
+	                if (cuentaReal != null) {
+	                    gasto.setCuenta(cuentaReal.getNombre());
+
+	                    // Comprobamos si la cuenta YA tiene este gasto para no duplicar deuda
+	                    boolean yaVinculado = cuentaReal.getGastos().stream()
+	                                            .anyMatch(g -> g.getId().equals(gasto.getId()));
+
+	                    if (!yaVinculado) {
+	                        cuentaReal.addGasto(gasto);
+	                        repoCuentas.updateCuenta(cuentaReal);
+	                    }
 	                }
 	            }
 	        }
 	        
-	        // Notificar al final para refrescar la tabla de golpe
-	        this.notificarCambio(EventoSistema.NUEVO_GASTO, null); // null o una lista si quisieras optimizar
-	        System.out.println("Importación finalizada.");
+	        this.notificarCambio(EventoSistema.NUEVO_GASTO, null);
+	        return gastosIgnorados;
 
 	    } catch (Exception e) {
-	        throw new ImportacionException("Error en el proceso de importación: " + e.getMessage());
+	        throw new ImportacionException("Error crítico importando: " + e.getMessage());
 	    }
 	}
 	public boolean isImporteValido(double importe) {

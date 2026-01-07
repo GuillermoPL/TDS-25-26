@@ -82,9 +82,10 @@ public class GastosViewController implements IObservador {
      */
     private void refrescarTabla() {
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
-        // g -> true devuelve todos los gastos sin filtrar
-        List<Gasto> todos = ctrl.getGastosPorCondicion(g -> true);
-        tablaGastos.getItems().setAll(todos);
+
+        List<Gasto> personales = ctrl.getGastosPorCondicion(g -> ctrl.esGastoPersonal(g));
+        
+        tablaGastos.getItems().setAll(personales);
     }
 
     @Override
@@ -113,12 +114,13 @@ public class GastosViewController implements IObservador {
         LocalDate hasta = dpHasta.getValue();
         String catSeleccionada = cbCategoria.getValue();
 
-        // Obtenemos el controlador a través de la configuración
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
 
-        // Definimos la lógica de filtrado usando un Predicado
-        // Es una forma muy limpia de encadenar condiciones
         List<Gasto> filtrados = ctrl.getGastosPorCondicion(g -> {
+            if (!ctrl.esGastoPersonal(g)) {
+                return false;
+            }
+
             // 1. Filtro de fecha "Desde"
             if (desde != null && g.getFecha().isBefore(desde)) {
                 return false;
@@ -130,17 +132,15 @@ public class GastosViewController implements IObservador {
             }
             
             // 3. Filtro de Categoría
-            // Comparamos el nombre. "Todas" es el valor por defecto que no filtra nada.
             if (catSeleccionada != null && !catSeleccionada.equals("Todas")) {
                 if (!g.getCategoria().toString().equals(catSeleccionada)) {
                     return false;
                 }
             }
             
-            return true; // Si pasa todos los filtros, el gasto se incluye
+            return true;
         });
 
-        // Actualizamos los elementos de la tabla
         tablaGastos.getItems().setAll(filtrados);
     }
 
@@ -203,53 +203,37 @@ public class GastosViewController implements IObservador {
     }
     @FXML
     private void handleImportarGastos() {
-        // 1. Configurar el selector de archivos
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Importar Gastos");
-        
-        // Filtro para CSV (Cumple el requisito de selección de formato)
-        fileChooser.getExtensionFilters().addAll(
-            new FileChooser.ExtensionFilter("Archivos CSV", "*.csv"),
-            new FileChooser.ExtensionFilter("Todos los archivos", "*.*")
-        );
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV", "*.csv"));
+        File file = fileChooser.showOpenDialog(tablaGastos.getScene().getWindow());
 
-        // Ubicación inicial (opcional, por defecto user home)
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
-
-        // 2. Mostrar diálogo sobre la ventana actual
-        // Necesitamos obtener el Stage. Una forma rápida desde un nodo de la escena:
-        Stage stage = (Stage) tablaGastos.getScene().getWindow();
-        File file = fileChooser.showOpenDialog(stage);
-
-        // 3. Procesar el archivo si el usuario seleccionó uno
         if (file != null) {
             ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
             
             try {
-                // Llamada al controlador
-                ctrl.importarGastos(file.getAbsolutePath());
+                int numIgnorados = ctrl.importarGastos(file.getAbsolutePath());
                 
-                // Éxito
-                UIUtils.mostrarAlerta(AlertType.INFORMATION, 
-                    "Importación Exitosa", 
-                    "Proceso completado", 
-                    "Se han cargado los gastos del fichero correctamente.");
-                    
-                // (La tabla se refrescará sola gracias al patrón Observador y notificarCambio)
+                if (numIgnorados > 0) {
+                    // Mensaje actualizado
+                    UIUtils.mostrarAlerta(AlertType.WARNING, 
+                        "Importación con Observaciones", 
+                        "Proceso finalizado", 
+                        "Se han procesado los gastos válidos.\n\nSe ignoraron " + numIgnorados + " registros por motivos de validación:\n"
+                        + "- Ya existían previamente.\n"
+                        + "- La cuenta compartida no existe.\n"
+                        + "- El pagador no pertenece a la cuenta.");
+                } else {
+                    UIUtils.mostrarAlerta(AlertType.INFORMATION, 
+                        "Importación Exitosa", 
+                        "Correcto", 
+                        "Todos los gastos han sido importados correctamente.");
+                }
                 
             } catch (ImportacionException e) {
-                // Error de lógica de negocio (formato mal, cuenta no existe, etc)
-                UIUtils.mostrarAlerta(AlertType.ERROR, 
-                    "Error de Importación", 
-                    "No se pudieron cargar los datos", 
-                    e.getMessage());
+                UIUtils.mostrarAlerta(AlertType.ERROR, "Error", "Fallo en importación", e.getMessage());
             } catch (Exception e) {
-                // Error inesperado
                 e.printStackTrace();
-                UIUtils.mostrarAlerta(AlertType.ERROR, 
-                    "Error del Sistema", 
-                    "Ha ocurrido un error inesperado", 
-                    e.getMessage());
             }
         }
     }
