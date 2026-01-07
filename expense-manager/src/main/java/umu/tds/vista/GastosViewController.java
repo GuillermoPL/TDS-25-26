@@ -25,6 +25,9 @@ import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import java.io.IOException;
+import javafx.stage.FileChooser;
+import java.io.File;
+import umu.tds.modelo.importacion.exceptions.ImportacionException;
 
 public class GastosViewController implements IObservador {
 
@@ -198,6 +201,57 @@ public class GastosViewController implements IObservador {
             }
         }
     }
+    @FXML
+    private void handleImportarGastos() {
+        // 1. Configurar el selector de archivos
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Importar Gastos");
+        
+        // Filtro para CSV (Cumple el requisito de selección de formato)
+        fileChooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("Archivos CSV", "*.csv"),
+            new FileChooser.ExtensionFilter("Todos los archivos", "*.*")
+        );
 
+        // Ubicación inicial (opcional, por defecto user home)
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+
+        // 2. Mostrar diálogo sobre la ventana actual
+        // Necesitamos obtener el Stage. Una forma rápida desde un nodo de la escena:
+        Stage stage = (Stage) tablaGastos.getScene().getWindow();
+        File file = fileChooser.showOpenDialog(stage);
+
+        // 3. Procesar el archivo si el usuario seleccionó uno
+        if (file != null) {
+            ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+            
+            try {
+                // Llamada al controlador
+                ctrl.importarGastos(file.getAbsolutePath());
+                
+                // Éxito
+                UIUtils.mostrarAlerta(AlertType.INFORMATION, 
+                    "Importación Exitosa", 
+                    "Proceso completado", 
+                    "Se han cargado los gastos del fichero correctamente.");
+                    
+                // (La tabla se refrescará sola gracias al patrón Observador y notificarCambio)
+                
+            } catch (ImportacionException e) {
+                // Error de lógica de negocio (formato mal, cuenta no existe, etc)
+                UIUtils.mostrarAlerta(AlertType.ERROR, 
+                    "Error de Importación", 
+                    "No se pudieron cargar los datos", 
+                    e.getMessage());
+            } catch (Exception e) {
+                // Error inesperado
+                e.printStackTrace();
+                UIUtils.mostrarAlerta(AlertType.ERROR, 
+                    "Error del Sistema", 
+                    "Ha ocurrido un error inesperado", 
+                    e.getMessage());
+            }
+        }
+    }
     
 }
