@@ -1,57 +1,68 @@
 package umu.tds.modelo;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore; // Importante si no queremos guardar esto en JSON redundante
+
 public class RepartoEquitativo implements EstrategiaReparto {
-    // Atributo para almacenar los porcentajes calculados (todos los usuarios tienen el mismo porcentaje)
+
+    // Cache para la vista (mostrar 33%, 33%...)
     private Map<Usuario, Double> porcentajes;
     
+    // Constructor vacío (Jackson)
+    public RepartoEquitativo() {
+        this.porcentajes = new HashMap<>();
+    }
     
-    public RepartoEquitativo() {}
-    
-    // Constructor que recibe los usuarios para pre-calcular el reparto equitativo
+    // Constructor de uso normal
     public RepartoEquitativo(Set<Usuario> usuarios) {
         this.porcentajes = new HashMap<>();
         if (usuarios != null && !usuarios.isEmpty()) {
-            double porcentajeEquitativo = 100.0 / usuarios.size();
-            for (Usuario u : usuarios) {
-                porcentajes.put(u, porcentajeEquitativo);
-            }
+            // Evitamos división por cero y magic numbers
+            double cuotaPorcentual = 100.0 / usuarios.size();
+            usuarios.forEach(u -> porcentajes.put(u, cuotaPorcentual));
         }
     }
 
     @Override
     public void calcular(Gasto nuevoGasto, Map<Usuario, Double> saldosActuales) {
+        // 1. Contrato
+        if (nuevoGasto == null || saldosActuales == null || saldosActuales.isEmpty()) {
+            return; //Return es seguro aquí.
+        }
+
         double importeTotal = nuevoGasto.getImporte();
         Usuario pagador = nuevoGasto.getPagador();
-        
         int numParticipantes = saldosActuales.size();
-        if (numParticipantes == 0) return; 
         
-        double cuota = importeTotal / numParticipantes;
+        // Cuota a pagar por cada uno (en dinero)
+        double cuotaIndividual = importeTotal / numParticipantes;
 
-        for (Usuario usuario : saldosActuales.keySet()) {
-            double saldoAnterior = saldosActuales.get(usuario);
+        saldosActuales.replaceAll((usuario, saldoActual) -> {
             
             if (usuario.equals(pagador)) {
-                double loQueLeDeben = importeTotal - cuota;
-                saldosActuales.put(usuario, saldoAnterior + loQueLeDeben);
+                // El pagador "recupera" lo que puso menos su propia parte
+                // Ejemplo: Pagué 30€, somos 3 (10€ c/u). Me deben 20€ (30 - 10).
+                // Saldo += 20.
+                return saldoActual + (importeTotal - cuotaIndividual);
             } else {
-                saldosActuales.put(usuario, saldoAnterior - cuota);
+                // Los demás restan su cuota (deben dinero)
+                return saldoActual - cuotaIndividual;
             }
-        }
+        });
     }
 
     @Override
     public boolean esSumaValida() {
-        return true; // Siempre es válido
+        return true; // En reparto equitativo, la matemática siempre cuadra
     }
 
     @Override
     public Map<Usuario, Double> getPorcentajes() {
-        return this.porcentajes;
+        // Devolvemos la configuración inicial
+    	return Collections.unmodifiableMap(this.porcentajes);
     }
-
 }

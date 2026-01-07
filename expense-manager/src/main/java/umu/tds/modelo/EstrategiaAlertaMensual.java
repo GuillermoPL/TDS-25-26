@@ -1,21 +1,31 @@
 package umu.tds.modelo;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class EstrategiaAlertaMensual implements IEstrategiaAlerta{
+public class EstrategiaAlertaMensual implements IEstrategiaAlerta {
 
-	@Override
-	public boolean verificar(List<Gasto> gastosAAnalizar, double limite) {
-		
-		List<Gasto> gastosUltimoMes = gastosAAnalizar.stream()
-													.filter(Gasto::realizadoEnUltimoMes)
-													.collect(Collectors.toList());
-		double gastoAcumulado = gastosUltimoMes.stream()
-												.collect(Collectors.summingDouble(Gasto::getImporte));
-		
-		
-		return gastoAcumulado > limite;
-	}
+    // Constructor vacío (Jackson)
+    public EstrategiaAlertaMensual() {}
 
+    @Override
+    public boolean verificar(List<Gasto> gastos, double limite) {
+        if (gastos == null || gastos.isEmpty()) return false;
+
+        LocalDate ahora = LocalDate.now();
+
+        // 1. filter: Nos quedamos solo con los de este mes y este año.
+        // 2. mapToDouble: Extraemos el importe directamente.
+        // 3. sum: Sumamos.
+        // Todo en una sola pasada, sin listas intermedias.
+        
+        double gastoAcumulado = gastos.stream()
+            .filter(g -> g.getFecha() != null)
+            .filter(g -> g.getFecha().getMonth() == ahora.getMonth() && 
+                         g.getFecha().getYear() == ahora.getYear())
+            .mapToDouble(Gasto::getImporte)
+            .sum();
+        
+        return gastoAcumulado > limite;
+    }
 }
