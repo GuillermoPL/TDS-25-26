@@ -139,10 +139,9 @@ Especificación funcional detallada dividida en 5 Épicas:
 4.  **Cuentas Compartidas:** Gestión de grupos y repartos (Equitativo/Porcentual).
 5.  **Importación:** Carga de datos externos.
 
-### 📕 [Manual de Usuario](./docs/MANUAL_USUARIO.pdf)
-Guía visual para el despliegue y uso de la aplicación:
-* Instrucciones de instalación y ejecución.
-* Recorrido por la interfaz gráfica.
-* Guía de uso del modo consola (CLI).
-
-
+### 📕 [Manual de Usuario](./docs/MANUAL_USUARIO.md)
+Guía visual detallada con capturas de pantalla de la aplicación:
+* **Gestión Principal:** Registro, edición, borrado, filtrado e importación de gastos.
+* **Funcionalidad Avanzada:** Gestión de categorías, alertas y cuentas compartidas (equitativas/porcentuales).
+* **Análisis:** Visualización de datos mediante gráficos circulares y calendario.
+* **Modo Consola:** Guía de uso para la interfaz de línea de comandos (CLI).
