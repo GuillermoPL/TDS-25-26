@@ -1,16 +1,19 @@
 package umu.tds.adapters.repository.impl;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
@@ -21,7 +24,7 @@ import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
 import umu.tds.modelo.Alerta;
 import umu.tds.modelo.Notificacion;
 
-public class RepositorioAlertasJSON implements RepositorioAlertas{
+public class RepositorioAlertasJSON implements RepositorioAlertas {
 
 	private static final Logger log = LogManager.getLogger();
 
@@ -29,31 +32,43 @@ public class RepositorioAlertasJSON implements RepositorioAlertas{
 	private List<Notificacion> notificaciones = null;
 	private String rutaAlertas;
 	private String rutaNotificaciones;
-	
-	public RepositorioAlertasJSON() {}
-	
+
+	public RepositorioAlertasJSON() {
+	}
 
 	private void cargaAlertasYNotificaciones() throws ErrorPersistenciaException {
-        try {
-            // Obtener rutas justo antes de cargar
-            this.rutaAlertas = Configuracion.getInstancia().getRutaAlertas();
-            this.rutaNotificaciones = Configuracion.getInstancia().getRutaNotificaciones();
+		try {
+			// Obtener rutas justo antes de cargar
+			this.rutaAlertas = Configuracion.getInstancia().getRutaAlertas();
+			this.rutaNotificaciones = Configuracion.getInstancia().getRutaNotificaciones();
 
-            this.alertas = cargar(rutaAlertas, new TypeReference<List<Alerta>>() {});
-            this.notificaciones = cargar(rutaNotificaciones, new TypeReference<List<Notificacion>>() {});
-        } catch (Exception e) {
-            log.error("Error cargando las alertas o las notificaciones ", e);
-            throw new ErrorPersistenciaException(e);
-        }
-    }
-	
-	private <T> List<T> cargar(String rutaFichero, TypeReference<List<T>> typeRef) throws Exception {
-		InputStream is = getClass().getResourceAsStream(rutaFichero);
-		if (is == null) return new ArrayList<>();
-		
+			this.alertas = cargar(rutaAlertas, new TypeReference<List<Alerta>>() {
+			});
+			this.notificaciones = cargar(rutaNotificaciones, new TypeReference<List<Notificacion>>() {
+			});
+		} catch (Exception e) {
+			log.error("Error cargando las alertas o las notificaciones ", e);
+			throw new ErrorPersistenciaException(e);
+		}
+	}
+
+	private <T> T cargar(String rutaFichero, TypeReference<T> tipoReferencia)
+			throws StreamReadException, DatabindException, IOException {
+
+		InputStream ficheroStream = getClass().getResourceAsStream(rutaFichero);
+
+		TypeReference<List<Notificacion>> tipoListaNotificaciones = new TypeReference<List<Notificacion>>() {
+		};
+
 		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
-		return mapper.readValue(is, typeRef);
+		if (tipoReferencia.getType().equals(tipoListaNotificaciones.getType())) {
+			mapper.registerModule(new JavaTimeModule());
+		}
+
+		T listaCargada = mapper.readValue(ficheroStream, tipoReferencia);
+
+		return listaCargada;
+
 	}
 
 	@Override
@@ -65,16 +80,18 @@ public class RepositorioAlertasJSON implements RepositorioAlertas{
 				// Manejo la excepcion y la propago como Excepcion en Tiempo de Ejecución.
 				log.error("No se han podido cargar las alertas ", e);
 				throw new RuntimeException(
-						"CRITICAL_LOAD_ERROR: No se pudo cargar el fichero de alertas.", e);
+						"CRITICAL_LOAD_ERROR: No se pudo cargar el fichero de alertas o notificaciones.", e);
 			}
 		}
 		return alertas;
 	}
 
-
 	@Override
-	public void addAlerta(Alerta alerta) throws ElementoExistenteException, ErrorPersistenciaException{
-		// Si el producto ya existe no puedo insertarlo
+	public void addAlerta(Alerta alerta) throws ElementoExistenteException, ErrorPersistenciaException {
+		if (alertas == null) {
+			getAlertas();
+		}
+		// Si la alerta ya existe no puedo insertarlo
 		if (alertas.contains(alerta)) {
 			// TODO: Describir mejor el error de que ya esté la alerta registrada
 			throw new ElementoExistenteException("La alerta ya ha sido registrada");
@@ -94,7 +111,10 @@ public class RepositorioAlertasJSON implements RepositorioAlertas{
 	}
 
 	@Override
-	public void removeAlerta(Alerta alerta) throws ErrorPersistenciaException{
+	public void removeAlerta(Alerta alerta) throws ErrorPersistenciaException {
+		if (alertas == null) {
+			getAlertas();
+		}
 		if (!alertas.contains(alerta)) {
 			return;
 		}
@@ -127,20 +147,27 @@ public class RepositorioAlertasJSON implements RepositorioAlertas{
 	public List<Notificacion> getNotificaciones() {
 		if (notificaciones == null) {
 			try {
-				notificaciones = cargar(rutaNotificaciones, new TypeReference<List<Notificacion>>() {});
-			} catch (Exception e) {
-				notificaciones = new ArrayList<>();
+				cargaAlertasYNotificaciones();
+			} catch (ErrorPersistenciaException e) {
+				// Manejo la excepcion y la propago como Excepcion en Tiempo de Ejecución.
+				log.error("No se han podido cargar las notificaciones ", e);
+				throw new RuntimeException(
+						"CRITICAL_LOAD_ERROR: No se pudo cargar el fichero de alertas o notifiaciones.", e);
 			}
 		}
 		return notificaciones;
 	}
 
 	@Override
-	public void addNotificacion(Notificacion notificacion) throws ErrorPersistenciaException {
-		if (this.notificaciones == null) {
-			this.getNotificaciones(); // Carga inicial
+	public void addNotificacion(Notificacion notificacion)
+			throws ErrorPersistenciaException, ElementoExistenteException {
+		if (notificaciones == null) {
+			getNotificaciones(); // Carga inicial
 		}
-		
+		if (notificaciones.contains(notificacion)) {
+			// TODO: Describir mejor el error de que ya esté la notificación registrada
+			throw new ElementoExistenteException("La notificación ya ha sido registrada");
+		}
 		notificaciones.add(notificacion);
 		try {
 			guardar(notificaciones, rutaNotificaciones);
@@ -150,20 +177,24 @@ public class RepositorioAlertasJSON implements RepositorioAlertas{
 			throw new ErrorPersistenciaException(e);
 		}
 	}
-	
-	
+
 	// Metodo para guardar por completo en el fichero json correspondiente
 	private <T> void guardar(List<T> elementos, String rutaFichero) throws Exception {
 		URL url = getClass().getResource(rutaFichero);
-		if (url == null) throw new RuntimeException("Fichero no encontrado: " + rutaFichero);
+		if (url == null)
+			throw new RuntimeException("Fichero no encontrado: " + rutaFichero);
+		try {
+			File ficheroJSon = Paths.get(url.toURI()).toFile();
+			ObjectMapper mapper = new ObjectMapper();
+			// IMPORTANTE: Registrar módulo para fechas LocalDate
+			mapper.registerModule(new JavaTimeModule());
 
-		File ficheroJSon = Paths.get(url.toURI()).toFile();
-		ObjectMapper mapper = new ObjectMapper();
-		// IMPORTANTE: Registrar módulo para fechas LocalDate
-		mapper.registerModule(new JavaTimeModule()); 
-		
-		mapper.writerWithDefaultPrettyPrinter().writeValue(ficheroJSon, elementos);
-		log.info("Datos guardados en: " + ficheroJSon.getAbsolutePath());
+			mapper.writerWithDefaultPrettyPrinter().writeValue(ficheroJSon, elementos);
+			log.info("Datos guardados en: " + ficheroJSon.getAbsolutePath());
+		} catch (IOException | URISyntaxException e) {
+			log.error("Error persistiendo en fichero", e);
+			throw e;
+		}
 	}
 
 }

@@ -49,7 +49,6 @@ public class RepositorioGastosJSON implements RepositorioGastos {
 	}
 	
 	private <T> T cargar(String rutaFichero, TypeReference<T> tipoReferencia)
-
 			throws StreamReadException, DatabindException, IOException {
 
 		InputStream ficheroStream = getClass().getResourceAsStream(rutaFichero);
