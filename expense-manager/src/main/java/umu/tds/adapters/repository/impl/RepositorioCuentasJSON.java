@@ -21,8 +21,9 @@ import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
 import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
 import umu.tds.modelo.CuentaCompartida;
 import umu.tds.modelo.Usuario;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-public class RepositorioCuentasJSON implements RepositorioCuentas{
+public class RepositorioCuentasJSON implements RepositorioCuentas {
 	
 	private static final Logger log = LogManager.getLogger();
 	
@@ -37,10 +38,8 @@ public class RepositorioCuentasJSON implements RepositorioCuentas{
 		try {
 			rutaCuentas = Configuracion.getInstancia().getRutaCuentas();
 			rutaUsuarios = Configuracion.getInstancia().getRutaUsuarios();
-			this.cuentas = cargar(rutaCuentas,
-								new TypeReference<List<CuentaCompartida>>() {});
-			this.usuarios = cargar(rutaUsuarios,
-								new TypeReference<List<Usuario>>() {});
+			this.cuentas = cargar(rutaCuentas, new TypeReference<List<CuentaCompartida>>() {});
+			this.usuarios = cargar(rutaUsuarios, new TypeReference<List<Usuario>>() {});
 		} catch (Exception e) {
 			log.error("Error cargando las cuentas o los usuarios ", e);
 			throw new ErrorPersistenciaException(e);
@@ -53,11 +52,12 @@ public class RepositorioCuentasJSON implements RepositorioCuentas{
 		InputStream ficheroStream = getClass().getResourceAsStream(rutaFichero);
 
 		ObjectMapper mapper = new ObjectMapper();
+		// --- CORRECCIÓN 1: Registrar módulo para leer fechas ---
+		mapper.registerModule(new JavaTimeModule());
 
 		T listaCargada = mapper.readValue(ficheroStream, tipoReferencia);
 
 		return listaCargada;
-
 	}
 	
 	@Override
@@ -66,10 +66,8 @@ public class RepositorioCuentasJSON implements RepositorioCuentas{
 			try {
 				cargaCuentasYUsuarios();
 			} catch (ErrorPersistenciaException e) {
-				// Manejo la excepcion y la propago como Excepcion en Tiempo de Ejecución.
 				log.error("No se han podido cargar las cuentas y usuarios", e);
-				throw new RuntimeException(
-						"CRITICAL_LOAD_ERROR: No se pudo cargar el fichero de cuentas o el de usuarios.", e);
+				throw new RuntimeException("CRITICAL_LOAD_ERROR: No se pudo cargar el fichero de cuentas o el de usuarios.", e);
 			}
 		}
 		return cuentas;
@@ -87,7 +85,6 @@ public class RepositorioCuentasJSON implements RepositorioCuentas{
 			}
 		}
 		return cuenta;
-		
 	}
 	
 	@Override
@@ -96,18 +93,14 @@ public class RepositorioCuentasJSON implements RepositorioCuentas{
 			getCuentas();
 		}
 		if (cuentas.contains(cuenta)) {
-			// TODO: Describir mejor el error de que ya esté la cuenta registrada
 			throw new ElementoExistenteException("La cuenta ya ha sido registrada");
 		}
 		cuentas.add(cuenta);
 		try {
 			guardar(cuentas, rutaCuentas);
 		} catch (Exception e) {
-			// Hacemos rollback ya que asumimos que no se ha podido guardar la cuenta
 			cuentas.remove(cuenta);
 			log.error("Error persistiendo la cuenta {}", cuenta, e);
-			// Capturo las excepciones genericas lanzadas al persistir y lanzo una propia
-			// encapsulando la excepcion real
 			throw new ErrorPersistenciaException(e);
 		}
 	}
@@ -117,14 +110,12 @@ public class RepositorioCuentasJSON implements RepositorioCuentas{
 		if (cuentas == null) {
 			getCuentas();
 		}
-		// La modificación la hacemos en el controlador
 		try {
 			guardar(cuentas, rutaCuentas);
 		} catch (Exception e) {
 			log.error("Error actualizando la cuenta {}", cuenta, e);
 			throw new ErrorPersistenciaException(e);
 		}
-
 	}
 	
 	@Override
@@ -133,10 +124,8 @@ public class RepositorioCuentasJSON implements RepositorioCuentas{
 			try {
 				cargaCuentasYUsuarios();
 			} catch (ErrorPersistenciaException e) {
-				// Manejo la excepcion y la propago como Excepcion en Tiempo de Ejecución.
 				log.error("No se han podido cargar las cuentas y usuarios", e);
-				throw new RuntimeException(
-						"CRITICAL_LOAD_ERROR: No se pudo cargar el fichero de cuentas o el de usuarios.", e);
+				throw new RuntimeException("CRITICAL_LOAD_ERROR: No se pudo cargar el fichero de cuentas o el de usuarios.", e);
 			}
 		}
 		return usuarios;
@@ -162,47 +151,40 @@ public class RepositorioCuentasJSON implements RepositorioCuentas{
 			getUsuarios();
 		}
 		if (usuarios.contains(u)) {
-			// TODO: Describir mejor el error de que ya esté el usuario registrado
 			throw new ElementoExistenteException("El usuario ya ha sido registrado");
 		}
 		usuarios.add(u);
 		try {
 			guardar(usuarios, rutaUsuarios);
 		} catch (Exception e) {
-			// Hacemos rollback ya que asumimos que no se ha podido guardar el usuario
 			usuarios.remove(u);
 			log.error("Error persistiendo el usuario {}", u, e);
-			// Capturo las excepciones genericas lanzadas al persistir y lanzo una propia
-			// encapsulando la excepcion real
 			throw new ErrorPersistenciaException(e);
 		}
 	}
 	
-	
-	private <T> void guardar(List<T> elementos, String rutaFichero)
-			throws Exception {
+	private <T> void guardar(List<T> elementos, String rutaFichero) throws Exception {
 
 		URL url = getClass().getResource(rutaFichero);
-		// Comprobamos por si el fichero fue eliminado con la aplicación abierta
+		
 		if (url == null) {
-	        log.error("El fichero ha desaparecido en tiempo de ejecución.");
-	        throw new RuntimeException("El fichero de datos ha sido eliminado.");
-	    }
+			log.error("El fichero ha desaparecido en tiempo de ejecución.");
+			throw new RuntimeException("El fichero de datos ha sido eliminado.");
+		}
 		
 		try {
-			// Cargo el fichero a partir de la URL local
 			File ficheroJSon = Paths.get(url.toURI()).toFile();
-	        
-	        ObjectMapper mapper = new ObjectMapper();
-	        
-	        mapper.writerWithDefaultPrettyPrinter().writeValue(ficheroJSon, elementos);
-	        
-	        log.info("Cuentas guardadas correctamente en: " + ficheroJSon.getAbsolutePath());
+			
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.registerModule(new JavaTimeModule());
+			
+			mapper.writerWithDefaultPrettyPrinter().writeValue(ficheroJSon, elementos);
+			
+			log.info("Cuentas guardadas correctamente en: " + ficheroJSon.getAbsolutePath());
 			
 		} catch (IOException | URISyntaxException e) {
 			log.error("Error persistiendo en fichero", e);
 			throw e;
 		}
 	}
-
 }

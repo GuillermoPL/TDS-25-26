@@ -73,37 +73,39 @@ public class ImportadorCSV implements ImportadorGastos {
     private Gasto parsearLinea(String linea) throws Exception {
         String[] campos = linea.split(SEPARADOR);
         
-        // El CSV tiene 8 columnas. Validamos que al menos vengan las 7 primeras (la divisa nos da igual).
-        if (campos.length < 7) {
-            throw new Exception("Faltan columnas. Se encontraron " + campos.length);
-        }
+        // 1. Validaciones previas...
+        if (campos.length < 7) throw new Exception("Faltan columnas...");
 
-        // FECHA
+        // ... (Tu código de parsing de FECHA, CATEGORÍA, PAGADOR, IMPORTE sigue igual) ...
         String fechaStr = campos[0].trim();
-        LocalDate fecha;
-        try {
-        	// Parseamos con hora (LocalDateTime) y nos quedamos solo con la fecha (toLocalDate)
-            fecha = LocalDateTime.parse(fechaStr, FORMATO_FECHA_HORA).toLocalDate();
-        } catch (Exception e) {
-             throw new Exception("Fecha inválida: " + fechaStr);
-        }
-        
-
-        // CATEGORÍA (Usamos la columna 4 'Subcategory')
-        // Esta categoría es temporal, en el controlador se busca en el repositorio.
+        LocalDate fecha = LocalDateTime.parse(fechaStr, FORMATO_FECHA_HORA).toLocalDate();
         String nombreCategoria = campos[3].trim();
         Categoria categoriaTemp = new Categoria(nombreCategoria);
-        
-        // PAGADOR (Usamos la columna 6 'Payer')
         String pagadorStr = campos[5].trim();
         Usuario pagador = new Usuario(pagadorStr);
-
-        // IMPORTE (Usamos la columna 7 'Amount')
         String importeStr = campos[6].trim();
         double importe = Double.parseDouble(importeStr);
+
+        // --- NUEVO CÓDIGO AQUÍ ---
         
-        // El id lo generamos por el momento actual en milisegundos.
-        String id = "G-IMPORT" + System.currentTimeMillis();
+        // A. Detectamos el tipo de cuenta leyendo la Columna 1 ("Account")
+        String nombreCuenta = campos[1].trim(); // ej: "Personal" o "Piso Estudiantes"
+        
+        // B. Definimos el prefijo según el tipo de cuenta
+        // Si NO es "Personal", forzamos que empiece por "G-COMP" para que el controlador lo filtre.
+        String prefijoID;
+        if ("Personal".equalsIgnoreCase(nombreCuenta)) {
+            prefijoID = "G-IMP-"; // Gasto personal importado
+        } else {
+            prefijoID = "G-COMP-IMP-"; // Gasto COMPartido IMPortado
+        }
+
+        // C. Generamos la semilla y el ID
+        String semilla = fechaStr + nombreCategoria + pagadorStr + importeStr + nombreCuenta;
+        String id = prefijoID + Math.abs(semilla.hashCode());
+
+        // -------------------------
+
         return new Gasto(id, importe, fecha, categoriaTemp, pagador);
     }
 }
