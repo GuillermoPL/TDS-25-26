@@ -1,50 +1,58 @@
 package umu.tds.controlador;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.time.LocalDate;
 
 import umu.tds.adapters.repository.RepositorioAlertas;
 import umu.tds.adapters.repository.RepositorioCuentas;
 import umu.tds.adapters.repository.RepositorioGastos;
 import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
 import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
-
+import umu.tds.modelo.Alerta;
+import umu.tds.modelo.Categoria;
 import umu.tds.modelo.CuentaCompartida;
 import umu.tds.modelo.EstrategiaReparto;
+import umu.tds.modelo.EventoSistema;
 import umu.tds.modelo.FactoriaEstrategia;
 import umu.tds.modelo.Gasto;
 import umu.tds.modelo.IEstrategiaAlerta;
 import umu.tds.modelo.Notificacion;
-import umu.tds.modelo.Alerta;
-import umu.tds.modelo.Categoria;
-import umu.tds.modelo.EventoSistema;
-import umu.tds.vista.IObservador;
 import umu.tds.modelo.Usuario;
 import umu.tds.modelo.importacion.FactoriaImportadores;
 import umu.tds.modelo.importacion.ImportadorGastos;
 import umu.tds.modelo.importacion.exceptions.ImportacionException;
-
-
+import umu.tds.vista.IObservador;
 
 public class ControladorAppGastos {
+    
+    // --- CONSTANTES (Evitamos Magic Strings) ---
+    private static final String CUENTA_PERSONAL = "Personal";
+    private static final String PREFIJO_PERSONAL = "G-";
+    private static final String PREFIJO_COMPARTIDO = "G-COMP-";
+    
     private RepositorioGastos repoGastos;
     private RepositorioCuentas repoCuentas;
     private RepositorioAlertas repoAlertas;
+    
     private List<IObservador> observadores = new LinkedList<>();
+
     // Constructor
     public ControladorAppGastos(RepositorioGastos repoGastos, RepositorioCuentas repoCuentas, RepositorioAlertas repoAlertas) {
         this.repoGastos = repoGastos;
         this.repoCuentas = repoCuentas;
         this.repoAlertas = repoAlertas;
     }
-	
+    
+    // --- GESTIÓN DE USUARIOS Y CUENTAS ---
+
     public List<CuentaCompartida> getCuentasCompartidas() {
         return repoCuentas.getCuentas();
     }
@@ -54,377 +62,379 @@ public class ControladorAppGastos {
                 .map(Usuario::getLogin)
                 .collect(Collectors.toList());
     }
+
+    public void crearCuentaCompartida(String nombre, String tipoEstrategia, Map<String, Double> datosVista) 
+            throws ElementoExistenteException, ErrorPersistenciaException {
+        
+        Map<Usuario, Double> porcentajesUsuarios = new HashMap<>();
+        Set<Usuario> usuarios = new HashSet<>();
+        
+        for (String login : datosVista.keySet()) {
+            Usuario u = obtenerOCrearUsuario(login);
+            usuarios.add(u);
+            
+            if ("PORCENTUAL".equalsIgnoreCase(tipoEstrategia)) {
+                porcentajesUsuarios.put(u, datosVista.get(login));
+            }
+        }
+
+        EstrategiaReparto estrategia = FactoriaEstrategia.getInstancia()
+                                    .crearEstrategia(tipoEstrategia, porcentajesUsuarios, usuarios);
+
+        if (!estrategia.esSumaValida()) {
+            throw new IllegalArgumentException("La configuración del reparto no es válida (la suma no es correcta).");
+        }
+
+        CuentaCompartida nuevaCuenta = new CuentaCompartida(nombre, estrategia, usuarios);
+        repoCuentas.addCuenta(nuevaCuenta);
+        notificarCambio(EventoSistema.NUEVA_CUENTA, nuevaCuenta);
+    }
     
-    private void inicializarCategoriasPredefinidas() throws ErrorPersistenciaException {
-        String[] predefinidas = {"Alimentación", "Transporte", "Entretenimiento"};
+    // Método auxiliar para limpiar lógica
+    private Usuario obtenerOCrearUsuario(String login) throws ErrorPersistenciaException {
+        Usuario u = repoCuentas.getUsuario(login);
+        if (u == null) {
+            u = new Usuario(login); 
+            try {
+                repoCuentas.addUsuario(u);
+            } catch (ElementoExistenteException e) {
+                // No debería pasar si acabamos de comprobar que es null, pero por seguridad
+            }
+        }
+        return u;
+    }
+    
+    // --- INICIALIZACIÓN ---
+    
+    public void inicializarDatos() throws ErrorPersistenciaException {
+        String[] predefinidas = {"Alimentación", "Transporte", "Entretenimiento", "Vivienda"};
         
         for (String nombre : predefinidas) {
             try {
-                // Intentamos registrarlas. Si ya existen, nuestro método lanzará ElementoExistenteException
-                this.registrarCategoria(nombre);
+                registrarCategoria(nombre);
             } catch (ElementoExistenteException e) {
-                // No hacemos nada, ya existe en el sistema
+                // Ignoramos si ya existe
             }
         }
     }
-    
-    public void inicializarDatos() throws ErrorPersistenciaException {
-        inicializarCategoriasPredefinidas();
+
+    // --- GESTIÓN DE GASTOS (CRUD) ---
+
+    public void registrarGasto(double importe, LocalDate fecha, String nombreCat) {
+        try {
+            Usuario pagador = ControladorSesion.getInstancia().getUsuarioActual();
+            if (pagador == null) throw new IllegalStateException("No hay sesión activa.");
+
+            Categoria cat = repoGastos.getCategoria(nombreCat); // Asumimos que la vista envía una cat válida
+            
+            // Usamos UUID para evitar colisiones de ID
+            String id = PREFIJO_PERSONAL + UUID.randomUUID().toString();
+            Gasto nuevo = new Gasto(id, importe, fecha, cat, pagador); 
+
+            repoGastos.addGasto(nuevo);
+
+            notificarCambio(EventoSistema.NUEVO_GASTO, nuevo);
+            verificarAlertas();
+
+        } catch (Exception e) {
+            // Aquí imprimimos porque la firma del método es void y no lanza excepciones
+            // Idealmente deberíamos cambiar la firma a throws Exception
+            System.err.println("Error registrando gasto: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
     
+    public void registrarGastoEnCuenta(double importe, LocalDate fecha, String nombreCat, String loginPagador, CuentaCompartida cuenta) {
+        try {
+            Usuario pagador = repoCuentas.getUsuario(loginPagador);
+            
+            // ID único para compartido
+            String id = PREFIJO_COMPARTIDO + UUID.randomUUID().toString();
+            Categoria cat = repoGastos.getCategoria(nombreCat);
+            
+            Gasto nuevoGasto = new Gasto(id, importe, fecha, cat, pagador, cuenta.getNombre());
+            
+            // Lógica transaccional (primero cuenta, luego repo general)
+            CuentaCompartida cuentaReal = repoCuentas.getCuenta(cuenta.getNombre());
+            cuentaReal.addGasto(nuevoGasto); // Aquí se recalculan saldos
+
+            repoGastos.addGasto(nuevoGasto);
+            repoCuentas.updateCuenta(cuentaReal);
+            
+            notificarCambio(EventoSistema.SALDO_ACTUALIZADO, cuentaReal);
+            verificarAlertas();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean eliminarGasto(Gasto gasto) {
+        try {
+            if (!esGastoPersonal(gasto)) return false;
+            
+            repoGastos.removeGasto(gasto); 
+            notificarCambio(EventoSistema.GASTO_ELIMINADO, gasto); 
+            return true;
+        } catch (ErrorPersistenciaException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public boolean modificarGasto(Gasto gasto) {
+        try {
+            if (!esGastoPersonal(gasto)) return false;
+            
+            repoGastos.updateGasto(gasto); 
+            notificarCambio(EventoSistema.GASTO_MODIFICADO, gasto);
+            verificarAlertas();
+            return true;
+        } catch (ErrorPersistenciaException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // --- CONSULTAS Y FILTROS (STREAMS) ---
+
+    public List<Gasto> getGastosPorCondicion(Predicate<Gasto> condicion) {
+        return repoGastos.getGastos().stream()
+                .filter(condicion)
+                .collect(Collectors.toList());
+    }
+    
+    public List<Gasto> getGastosPersonales() {
+        return getGastosPorCondicion(this::esGastoPersonal);
+    }
+    
+    public boolean esGastoPersonal(Gasto g) {
+        if (g == null || g.getId() == null) return false;
+        return !g.getId().startsWith(PREFIJO_COMPARTIDO); // Uso de constante
+    }
+
+    // --- ALERTAS ---
+
     public void crearAlerta(double limite, String periodo, String nombreCategoria) {
         try {
-            // 1. Crear estrategia mediante la factoría
             IEstrategiaAlerta est = FactoriaEstrategia.getInstancia().crearEstrategiaAlerta(periodo);
             
-            // 2. Determinar si hay categoría específica
             Alerta nueva;
-            if (nombreCategoria == null) {
+            if (nombreCategoria == null || nombreCategoria.isEmpty()) {
                 nueva = new Alerta(limite, est);
             } else {
                 Categoria cat = new Categoria(nombreCategoria);
                 nueva = new Alerta(limite, est, cat);
             }
             
-            // 3. Persistir y notificar
             repoAlertas.addAlerta(nueva);
-            this.notificarCambio(EventoSistema.NUEVA_ALERTA, nueva);
+            notificarCambio(EventoSistema.NUEVA_ALERTA, nueva);
+            
+            // Verificamos inmediatamente por si la alerta ya se cumple al crearla
+            verificarAlertas();
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+    
+    private void verificarAlertas() {
+        List<Gasto> todosLosGastos = repoGastos.getGastos();
+        List<Alerta> alertas = repoAlertas.getAlertas();
 
+        for (Alerta alerta : alertas) {
+            // Si ya fue notificada, no gastamos CPU calculando nada (Optimización)
+            if (alerta.isFueNotificada()) continue;
+
+            if (alerta.verificarSiSuperada(todosLosGastos)) {
+                triggerNotificacion(alerta);
+            } 
+        }
+    }
+    
+    private void triggerNotificacion(Alerta alerta) {
+        alerta.setFueNotificada(true);
+        try {
+            repoAlertas.updateAlerta(alerta);
+
+            String mensaje = "Límite de " + String.format("%.2f", alerta.getLimite()) + "€ superado";
+            if (alerta.getCategoria() != null) {
+                mensaje += " en " + alerta.getCategoria().getId();
+            }
+            
+            Notificacion n = new Notificacion(mensaje, LocalDate.now(), alerta);
+            repoAlertas.addNotificacion(n);
+            
+            notificarCambio(EventoSistema.ALERTA_DISPARADA, alerta);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
     public void eliminarAlerta(Alerta alerta) {
         try {
             repoAlertas.removeAlerta(alerta);
-            this.notificarCambio(EventoSistema.NUEVA_ALERTA, null);
+            notificarCambio(EventoSistema.NUEVA_ALERTA, null);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public List<Alerta> getAlertas() {
-        return repoAlertas.getAlertas();
+    public List<Alerta> getAlertas() { return repoAlertas.getAlertas(); }
+    public List<Notificacion> getHistorialNotificaciones() { return repoAlertas.getNotificaciones(); }
+
+    // --- CATEGORÍAS ---
+    
+    public void registrarCategoria(String nombre) throws ElementoExistenteException, ErrorPersistenciaException {
+        repoGastos.addCategoria(new Categoria(nombre));
+        notificarCambio(EventoSistema.NUEVA_CATEGORIA, nombre);
     }
-	//gestion de la lista
-	// Métodos para gestionar la lista
+    
+    public List<String> getNombreCategorias() {
+        return repoGastos.getCategorias().stream()
+                .map(Categoria::getId)
+                .sorted()
+                .collect(Collectors.toList());
+    }
+    
+    public boolean categoriaExists(String nombreCategoria) {
+        return getNombreCategorias().contains(nombreCategoria);
+    }
+
+    // --- IMPORTACIÓN (REFACTORIZADA) ---
+    // Dividida en métodos más pequeños para mejorar legibilidad
+
+    public int importarGastos(String rutaFichero) throws ImportacionException {
+        int ignoradosTotales = 0;
+
+        try {
+            ImportadorGastos importador = FactoriaImportadores.getInstancia().crearImportador(rutaFichero);
+            Map<String, List<Gasto>> mapa = importador.leerGastos(rutaFichero);
+            
+            for (String nombreCuenta : mapa.keySet()) {
+                ignoradosTotales += procesarCuentaImportada(nombreCuenta, mapa.get(nombreCuenta));
+            }
+            
+            notificarCambio(EventoSistema.NUEVO_GASTO, null);
+            return ignoradosTotales;
+
+        } catch (Exception e) {
+            throw new ImportacionException("Error crítico importando: " + e.getMessage());
+        }
+    }
+    
+    private int procesarCuentaImportada(String nombreCuenta, List<Gasto> gastos) {
+        int ignorados = 0;
+        CuentaCompartida cuentaReal = null;
+
+        // 1. Verificar existencia de cuenta compartida
+        if (!CUENTA_PERSONAL.equals(nombreCuenta)) {
+            cuentaReal = repoCuentas.getCuenta(nombreCuenta);
+            if (cuentaReal == null) {
+                System.err.println("AVISO: Cuenta inexistente '" + nombreCuenta + "'. Ignorando " + gastos.size() + " gastos.");
+                return gastos.size(); // Ignoramos todos
+            }
+        }
+
+        // 2. Procesar cada gasto
+        for (Gasto gasto : gastos) {
+            if (!procesarGastoIndividual(gasto, cuentaReal, nombreCuenta)) {
+                ignorados++;
+            }
+        }
+        return ignorados;
+    }
+
+    /**
+     * Procesa un único gasto importado.
+     * @return true si se importó correctamente, false si fue ignorado.
+     */
+    private boolean procesarGastoIndividual(Gasto gasto, CuentaCompartida cuentaReal, String nombreCuenta) {
+        // A. Validar pertenencia usuario
+        if (cuentaReal != null) {
+            String loginPagador = gasto.getPagador().getLogin();
+            boolean esMiembro = cuentaReal.getSaldosPorUsuario().keySet().stream()
+                    .anyMatch(u -> u.getLogin().equalsIgnoreCase(loginPagador));
+            
+            if (!esMiembro) {
+                System.err.println("AVISO: Usuario intruso '" + loginPagador + "' en cuenta '" + nombreCuenta + "'.");
+                return false;
+            }
+        }
+
+        // B. Gestión Categoría
+        Categoria catFantasma = gasto.getCategoria();
+        if (repoGastos.getCategoria(catFantasma.getId()) != null) {
+            gasto.setCategoria(repoGastos.getCategoria(catFantasma.getId()));
+        } else {
+            try {
+                // Si falla al guardar la categoria, mejor abortar este gasto
+                registrarCategoria(catFantasma.getId());
+            } catch (Exception e) { e.printStackTrace(); }
+        }
+
+        // C. Persistencia General
+        try {
+            repoGastos.addGasto(gasto);
+        } catch (ElementoExistenteException e) {
+            System.out.println("Info: Duplicado global " + gasto.getId());
+            // Si es personal y ya existe, paramos aquí
+            if (cuentaReal == null) return false;
+        } catch (Exception e) {
+            return false;
+        }
+
+        // D. Vinculación Cuenta Compartida
+        if (cuentaReal != null) {
+            gasto.setCuenta(cuentaReal.getNombre());
+            
+            boolean yaVinculado = cuentaReal.getGastos().stream()
+                    .anyMatch(g -> g.getId().equals(gasto.getId()));
+
+            if (!yaVinculado) {
+                cuentaReal.addGasto(gasto);
+                try {
+                    repoCuentas.updateCuenta(cuentaReal);
+                } catch (ErrorPersistenciaException e) {
+                    e.printStackTrace();
+                    return false;
+                }
+            } else {
+                return false; // Ya estaba vinculado
+            }
+        }
+        
+        return true;
+    }
+
+    // --- OBSERVADOR ---
+    
     public void registrarObservador(IObservador obs) {
-    	// Primero eliminamos si hay alguna instancia de la vista que vamos a registrar, para que
-    	// no se guarden duplicados y por tanto no se notifique muchas veces a la misma vista.
-    	observadores.removeIf(o -> o.getClass().equals(obs.getClass()));
-    	
+        observadores.removeIf(o -> o.getClass().equals(obs.getClass()));
         observadores.add(obs);
     }
 
     public void eliminarObservador(IObservador obs) {
         observadores.remove(obs);
     }
-	//Devuelve gastos que pasan un filtro o varios
-	public List<Gasto> getGastosPorCondicion(Predicate<Gasto> condicion) {
-		List<Gasto> gastos = repoGastos.getGastos();
-		return gastos.stream()
-				.filter(condicion)
-				.collect(Collectors.toList());
-	}
-	
-	public List<Gasto> getGastosPersonales() {
-	    // Reutilizamos la lógica de esGastoPersonal que ya comprueba el prefijo "G-COMP"
-	    return getGastosPorCondicion(g -> esGastoPersonal(g));
-	}
-	
-	// Añadimos las excepciones a la firma del método
-	public void crearCuentaCompartida(String nombre, String tipoEstrategia, Map<String, Double> datosVista) 
-	        throws ElementoExistenteException, ErrorPersistenciaException {
-	    
-	    Map<Usuario, Double> porcentajesUsuarios = null;
-	    Set<Usuario> usuarios = new HashSet<>();
-	    
-	    for (String login : datosVista.keySet()) {
-	        Usuario u = repoCuentas.getUsuario(login);
-	        if (u == null) {
-	            u = new Usuario(login); 
-	            repoCuentas.addUsuario(u); 
-	        }
-	        usuarios.add(u); 
-	        
-	        if (tipoEstrategia.equalsIgnoreCase("PORCENTUAL")) {
-	            if (porcentajesUsuarios == null) porcentajesUsuarios = new HashMap<>();
-	            porcentajesUsuarios.put(u, datosVista.get(login));
-	        }
-	    }
-
-	    EstrategiaReparto estrategia = FactoriaEstrategia.getInstancia()
-	                                    .crearEstrategia(tipoEstrategia, porcentajesUsuarios, usuarios);
-
-	    if (!estrategia.esSumaValida()) {
-	        throw new IllegalArgumentException("La configuración del reparto no es válida.");
-	    }
-
-	    CuentaCompartida nuevaCuenta = new CuentaCompartida(nombre, estrategia, usuarios);
-	    repoCuentas.addCuenta(nuevaCuenta);
-	    this.notificarCambio(EventoSistema.NUEVA_CUENTA, nuevaCuenta);
-	}
-	
-	//Registra un gasto en una CuentaCompartida
-	public void registrarGastoEnCuenta(double importe, LocalDate fecha, String nombreCat, String loginPagador, CuentaCompartida cuenta) {
-	    try {
-	        // 1. Identificamos al usuario pagador real
-	        Usuario pagador = repoCuentas.getUsuario(loginPagador);
-	        
-	        // 2. Creamos el objeto Gasto
-	        String id = "G-COMP-" + System.currentTimeMillis();
-	        Categoria cat = repoGastos.getCategoria(nombreCat);
-	        Gasto nuevoGasto = new Gasto(id, importe, fecha, cat, pagador, cuenta.getNombre());
-	        
-	        // 3. Añadimos el gasto a la cuenta (a la real, la que está guardada en memoria)
-	        CuentaCompartida cuentaReal = repoCuentas.getCuenta(cuenta.getNombre());
-	        cuentaReal.addGasto(nuevoGasto);
-
-	        // 4. Persistencia
-	        repoGastos.addGasto(nuevoGasto);
-	        repoCuentas.updateCuenta(cuenta);
-	        
-	        // 5. Notificación para refrescar saldos en la UI
-	        this.notificarCambio(EventoSistema.SALDO_ACTUALIZADO, cuenta);
-	        
-	        // 6. Verificación de alertas globales
-	        verificarAlertas();
-
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
-	}
-	
-	// En ControladorAppGastos.java
-	public Map<Usuario, Double> getPorcentajesUsuarioCuenta(CuentaCompartida cuenta) {
-	    // Delegamos en la cuenta
-	    return cuenta.getPorcentajesEstrategia();
-	}
-	
-	public Map<Usuario, Double> getSaldosPorUsuarioCuenta(CuentaCompartida cuenta){
-		return cuenta.getSaldosPorUsuario();
-	}
-	
-	private void verificarAlertas() {
-	    List<Gasto> todosLosGastos = repoGastos.getGastos();
-	    List<Alerta> alertas = repoAlertas.getAlertas();
-
-	    for (Alerta alerta : alertas) {
-	        boolean superada = alerta.verificarSiSuperada(todosLosGastos);
-
-	        // Se supera el límite y NO habíamos avisado antes
-	        if (superada && !alerta.isFueNotificada()) {
-	            alerta.setFueNotificada(true); // Bloqueamos para que no repita
-	            
-	            try {
-	                repoAlertas.updateAlerta(alerta); // Guardamos que ya avisamos
-
-	                // Crear y guardar notificación en el historial
-	                String mensaje = "Límite de " + String.format("%.2f", alerta.getLimite()) + "€ superado";
-	                if (alerta.getCategoria() != null) {
-	                    mensaje += " en " + alerta.getCategoria().getId();
-	                }
-	                
-	                Notificacion n = new Notificacion(mensaje, LocalDate.now(), alerta);
-	                repoAlertas.addNotificacion(n);
-	                
-	                // Disparar evento para que la UI muestre el Alert
-	                this.notificarCambio(EventoSistema.ALERTA_DISPARADA, alerta);
-	                
-	            } catch (Exception e) {
-	                e.printStackTrace();
-	            }
-	        } 
-	    }
-	}
-	
-	public List<Notificacion> getHistorialNotificaciones() {
-	    return repoAlertas.getNotificaciones();
-	}
-	
-	public List<String> getNombreCategorias() {
-	    Set<String> nombres = repoGastos.getCategorias().stream()
-	            .map(c -> c.getId())
-	            .collect(Collectors.toSet());
-	    
-	    return nombres.stream().sorted().collect(Collectors.toList());
-	}
-	
-	private void notificarCambio(EventoSistema evento, Object datos) {
+    
+    private void notificarCambio(EventoSistema evento, Object datos) {
         observadores.forEach(obs -> obs.actualizar(evento, datos));
     }
-	
-	public void registrarGasto(double importe, LocalDate fecha, String nombreCat) {
-	    try {
-	        // 1. Obtener el usuario de la sesión
-	        Usuario pagador = ControladorSesion.getInstancia().getUsuarioActual();
-	        
-	        if (pagador == null) {
-	            throw new RuntimeException("Error: No hay una sesión de usuario activa.");
-	        }
+    
+    public Map<Usuario, Double> getPorcentajesUsuarioCuenta(CuentaCompartida cuenta) {
+        return cuenta.getPorcentajesEstrategia();
+    }
+    
+    public Map<Usuario, Double> getSaldosPorUsuarioCuenta(CuentaCompartida cuenta){
+        return cuenta.getSaldosPorUsuario();
+    }
+    
+ // --- MÉTODOS AUXILIARES PARA LA VISTA ---
 
-	        // 2. recuperar categoría
-	        Categoria cat = repoGastos.getCategoria(nombreCat);
-
-	        // 3. Crear el objeto Gasto con la categoría real
-	        String id = "G-" + System.currentTimeMillis();
-	        Gasto nuevo = new Gasto(id, importe, fecha, cat, pagador); 
-
-	        // 4. Persistencia en el repositorio de gastos
-	        repoGastos.addGasto(nuevo);
-
-	        // 5. Notificar a los observadores para refrescar tablas
-	        this.notificarCambio(EventoSistema.NUEVO_GASTO, nuevo);
-	        
-	        // 6. Lanzar verificación de alertas globales
-	        verificarAlertas();
-
-	    } catch (ElementoExistenteException e) {
-	        System.err.println("Error: El ID del gasto ya existe.");
-	        e.printStackTrace();
-	    } catch (ErrorPersistenciaException e) {
-	        System.err.println("Error crítico al guardar en el archivo JSON.");
-	        e.printStackTrace();
-	    } catch (Exception e) {
-	        System.err.println("Error inesperado: " + e.getMessage());
-	        e.printStackTrace();
-	    }
-	}
-	
-	public void registrarCategoria(String nombre) throws ElementoExistenteException, ErrorPersistenciaException {
-		repoGastos.addCategoria(new Categoria(nombre));
-		
-		// Notificamos el cambio para que las vistas se enteren
-		this.notificarCambio(EventoSistema.NUEVA_CATEGORIA, nombre);
-
-	}
-	
-	public boolean eliminarGasto(Gasto gasto) {
-	    try {
-	        if (!esGastoPersonal(gasto)) {
-	            return false;
-	        }
-	        repoGastos.removeGasto(gasto); 
-	        this.notificarCambio(EventoSistema.GASTO_ELIMINADO, gasto); 
-	        return true;
-	    } catch (ErrorPersistenciaException e) {
-	        e.printStackTrace();
-	        return false;
-	    }
-	}
-	
-
-	public boolean modificarGasto(Gasto gasto) {
-	    try {
-	        if (!esGastoPersonal(gasto)) {
-	            return false;
-	        }
-	        repoGastos.updateGasto(gasto); 
-	        this.notificarCambio(EventoSistema.GASTO_MODIFICADO, gasto);
-	        verificarAlertas();
-	        return true;
-	    } catch (ErrorPersistenciaException e) {
-	        e.printStackTrace();
-	        return false;
-	    }
-	}
-	
-
-	public int importarGastos(String rutaFichero) throws ImportacionException {
-	    int gastosIgnorados = 0; // Contador total de problemas
-
-	    try {
-	        ImportadorGastos importador = FactoriaImportadores.getInstancia().crearImportador(rutaFichero);
-	        Map<String, List<Gasto>> mapa = importador.leerGastos(rutaFichero);
-	        
-	        for (String nombreCuenta : mapa.keySet()) {
-	            List<Gasto> gastosAProcesar = mapa.get(nombreCuenta);
-	            
-	            // --- VALIDACIÓN 1: Existencia de la Cuenta ---
-	            CuentaCompartida cuentaReal = null;
-	            if (!nombreCuenta.equals("Personal")) {
-	                cuentaReal = repoCuentas.getCuenta(nombreCuenta);
-	                if (cuentaReal == null) {
-	                    System.err.println("AVISO: La cuenta '" + nombreCuenta + "' no existe en el sistema. Se ignoran " + gastosAProcesar.size() + " gastos.");
-	                    gastosIgnorados += gastosAProcesar.size();
-	                    continue; // Saltamos a la siguiente cuenta del mapa, ignorando estos gastos
-	                }
-	            }
-
-	            for (Gasto gasto : gastosAProcesar) {
-	                
-	                // --- VALIDACIÓN 2: Pertenencia del Pagador (Solo para cuentas compartidas) ---
-	                if (cuentaReal != null) {
-	                    // Verificamos si el pagador del CSV está en la lista de usuarios de la cuenta real
-	                    // Usamos streams para comparar por login (String) y evitar problemas de objetos distintos
-	                    String loginPagadorCSV = gasto.getPagador().getLogin();
-	                    
-	                    boolean esMiembro = cuentaReal.getSaldosPorUsuario().keySet().stream()
-	                            .anyMatch(u -> u.getLogin().equalsIgnoreCase(loginPagadorCSV));
-	                    
-	                    if (!esMiembro) {
-	                        System.err.println("AVISO: El usuario '" + loginPagadorCSV + "' no pertenece a la cuenta '" + nombreCuenta + "'. Gasto ignorado.");
-	                        gastosIgnorados++;
-	                        continue; // Saltamos este gasto
-	                    }
-	                }
-
-	                // --- PROCESAMIENTO NORMAL (Si pasa las validaciones) ---
-
-	                // 1. Gestión de Categorías
-	                Categoria catFantasma = gasto.getCategoria();
-	                Categoria catReal = repoGastos.getCategoria(catFantasma.getId());
-	                if (catReal != null) {
-	                    gasto.setCategoria(catReal);
-	                } else {
-	                    repoGastos.addCategoria(catFantasma);
-	                    this.notificarCambio(EventoSistema.NUEVA_CATEGORIA, catFantasma.getId());
-	                }
-
-	                // 2. Persistencia General
-	                try {
-	                    repoGastos.addGasto(gasto);
-	                } catch (ElementoExistenteException e) {
-	                    System.out.println("Info: Gasto duplicado (ID: " + gasto.getId() + "). Se omite del repositorio.");
-	                    gastosIgnorados++;
-	                }
-
-	                // 3. Vinculación a Cuenta Compartida
-	                if (cuentaReal != null) {
-	                    gasto.setCuenta(cuentaReal.getNombre());
-
-	                    // Comprobamos si la cuenta YA tiene este gasto para no duplicar deuda
-	                    boolean yaVinculado = cuentaReal.getGastos().stream()
-	                                            .anyMatch(g -> g.getId().equals(gasto.getId()));
-
-	                    if (!yaVinculado) {
-	                        cuentaReal.addGasto(gasto);
-	                        repoCuentas.updateCuenta(cuentaReal);
-	                    }
-	                }
-	            }
-	        }
-	        
-	        this.notificarCambio(EventoSistema.NUEVO_GASTO, null);
-	        return gastosIgnorados;
-
-	    } catch (Exception e) {
-	        throw new ImportacionException("Error crítico importando: " + e.getMessage());
-	    }
-	}
-	public boolean isImporteValido(double importe) {
-	    return importe > 0;
-	}
-	
-	public boolean categoriaExists(String nombreCategoria) {
-	    // Obtenemos la lista de nombres de categorías y comprobamos si contiene el nombre
-	    List<String> categoriasDisponibles = getNombreCategorias();
-	    return categoriasDisponibles.contains(nombreCategoria);
-	}
-	
-	public boolean esGastoPersonal(Gasto g) {
-	    if (g == null || g.getId() == null) return false;
-	    // Un gasto es personal si su ID NO empieza por "G-COMP"
-	    return !g.getId().startsWith("G-COMP");
-	}
+    public boolean isImporteValido(double importe) {
+        // Regla de negocio: El importe debe ser positivo
+        return importe > 0;
+    }
 }
