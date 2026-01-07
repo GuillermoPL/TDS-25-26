@@ -1,141 +1,159 @@
 package umu.tds.vista;
 
-import java.util.List;
-import java.util.Optional;
+import java.io.File;
 import java.time.LocalDate;
+import java.time.Month;
+import java.time.format.TextStyle;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.ComboBox;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.CustomMenuItem;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.MenuButton;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-import umu.tds.App;
+import javafx.stage.FileChooser;
+
 import umu.tds.Configuracion;
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.modelo.EventoSistema;
 import umu.tds.modelo.Gasto;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.DialogPane;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import java.io.IOException;
-import javafx.stage.FileChooser;
-import java.io.File;
 import umu.tds.modelo.importacion.exceptions.ImportacionException;
 
 public class GastosViewController implements IObservador {
 
+    // --- Elementos de la Vista (FXML) ---
     @FXML private TableView<Gasto> tablaGastos;
     @FXML private TableColumn<Gasto, LocalDate> colFecha;
     @FXML private TableColumn<Gasto, Object> colCategoria;
     @FXML private TableColumn<Gasto, String> colConcepto;
     @FXML private TableColumn<Gasto, Double> colImporte;
     @FXML private TableColumn<Gasto, Object> colPagador;
+    
     @FXML private DatePicker dpDesde;
     @FXML private DatePicker dpHasta;
-    @FXML private ComboBox<String> cbCategoria;
+    
+    // Componentes para selección múltiple (HU 2.4)
+    @FXML private MenuButton mbMeses;
+    @FXML private MenuButton mbCategorias;
 
+    // --- Estado Interno ---
+    private List<CheckBox> listaChecksMeses = new ArrayList<>();
+    private List<CheckBox> listaChecksCategorias = new ArrayList<>();
+
+    // --- Inicialización ---
     @FXML
     public void initialize() {
-        // 1. Configuración de celdas de la tabla
-        // El string debe coincidir exactamente con el nombre del atributo en Gasto.java
+        // 1. Configuración de columnas
         colFecha.setCellValueFactory(new PropertyValueFactory<>("fecha"));
         colCategoria.setCellValueFactory(new PropertyValueFactory<>("categoria"));
         colConcepto.setCellValueFactory(new PropertyValueFactory<>("id"));
         colImporte.setCellValueFactory(new PropertyValueFactory<>("importe"));
         colPagador.setCellValueFactory(new PropertyValueFactory<>("pagador"));
 
-        // 2. Obtener el controlador de negocio a través del Service Locator (Configuracion)
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+        
+        // 2. Cargar los filtros dinámicos
+        inicializarFiltroMeses();
+        actualizarFiltroCategorias();
 
-        // 3. Configurar el ComboBox de categorías para el filtro
-        actualizarComboCategorias();
-
-        // 4. Registrarse como observador para actualizaciones en tiempo real
+        // 3. Registrar observador
         ctrl.registrarObservador(this);
         
-        // 5. Carga inicial de datos
+        // 4. Carga inicial de datos
         refrescarTabla();
     }
+    
+    // --- Configuración de Filtros Múltiples ---
 
-    /**
-     * Helper para rellenar el combo de categorías incluyendo la opción neutra
-     */
-    private void actualizarComboCategorias() {
-        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
-        List<String> categorias = ctrl.getNombreCategorias();
-        
-        cbCategoria.getItems().clear();
-        cbCategoria.getItems().add("Todas");
-        cbCategoria.getItems().addAll(categorias);
-        cbCategoria.setValue("Todas");
-    }
+    private void inicializarFiltroMeses() {
+        mbMeses.getItems().clear();
+        listaChecksMeses.clear();
 
-    /**
-     * Carga todos los gastos del repositorio en la tabla
-     */
-    private void refrescarTabla() {
-        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
-
-        List<Gasto> personales = ctrl.getGastosPorCondicion(g -> ctrl.esGastoPersonal(g));
-        
-        tablaGastos.getItems().setAll(personales);
-    }
-
-    @Override
-    public void actualizar(EventoSistema evento, Object datos) {
-        // Escuchamos todos los eventos que afectan a la lista de gastos
-        if (evento == EventoSistema.NUEVO_GASTO || 
-            evento == EventoSistema.GASTO_MODIFICADO || 
-            evento == EventoSistema.GASTO_ELIMINADO) {
+        // Generamos los 12 meses en español
+        for (Month mes : Month.values()) {
+            String nombreMes = mes.getDisplayName(TextStyle.FULL, new Locale("es", "ES"));
+            nombreMes = nombreMes.substring(0, 1).toUpperCase() + nombreMes.substring(1);
             
-            javafx.application.Platform.runLater(() -> {
-                refrescarTabla();
-            });
-        }
-
-        if (evento == EventoSistema.NUEVA_CATEGORIA) {
-            javafx.application.Platform.runLater(() -> {
-                actualizarComboCategorias();
-            });
+            CheckBox cb = new CheckBox(nombreMes);
+            cb.setUserData(mes); // Guardamos el Enum Month para usarlo al filtrar
+            
+            CustomMenuItem item = new CustomMenuItem(cb);
+            item.setHideOnClick(false); // Mantiene el menú abierto al hacer clic
+            
+            mbMeses.getItems().add(item);
+            listaChecksMeses.add(cb);
         }
     }
-    // --- MÉTODOS DE ACCIÓN  ---
+
+    private void actualizarFiltroCategorias() {
+        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+        List<String> nombresCategorias = ctrl.getNombreCategorias();
+        
+        mbCategorias.getItems().clear();
+        listaChecksCategorias.clear();
+
+        for (String nombreCat : nombresCategorias) {
+            CheckBox cb = new CheckBox(nombreCat);
+            cb.setUserData(nombreCat); // Guardamos el String del nombre
+            
+            CustomMenuItem item = new CustomMenuItem(cb);
+            item.setHideOnClick(false);
+            
+            mbCategorias.getItems().add(item);
+            listaChecksCategorias.add(cb);
+        }
+    }
+
+    // --- Lógica de Filtrado Principal (HU 2.4) ---
 
     @FXML
     private void handleFiltrar() {
         LocalDate desde = dpDesde.getValue();
         LocalDate hasta = dpHasta.getValue();
-        String catSeleccionada = cbCategoria.getValue();
 
+        // 1. Obtener meses seleccionados
+        List<Month> mesesSeleccionados = new ArrayList<>();
+        for (CheckBox cb : listaChecksMeses) {
+            if (cb.isSelected()) mesesSeleccionados.add((Month) cb.getUserData());
+        }
+        actualizarTextoBoton(mbMeses, "Meses", mesesSeleccionados.size());
+
+        // 2. Obtener categorías seleccionadas
+        List<String> categoriasSeleccionadas = new ArrayList<>();
+        for (CheckBox cb : listaChecksCategorias) {
+            if (cb.isSelected()) categoriasSeleccionadas.add((String) cb.getUserData());
+        }
+        actualizarTextoBoton(mbCategorias, "Categorías", categoriasSeleccionadas.size());
+
+        // 3. Aplicar predicado compuesto
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
 
         List<Gasto> filtrados = ctrl.getGastosPorCondicion(g -> {
-            if (!ctrl.esGastoPersonal(g)) {
-                return false;
+            // A. SEGURIDAD: Solo mostrar gastos personales
+            if (!ctrl.esGastoPersonal(g)) return false;
+
+            // B. Filtro Rango Fechas
+            if (desde != null && g.getFecha().isBefore(desde)) return false;
+            if (hasta != null && g.getFecha().isAfter(hasta)) return false;
+
+            // C. Filtro Lista Meses (Si la lista no está vacía)
+            if (!mesesSeleccionados.isEmpty()) {
+                if (!mesesSeleccionados.contains(g.getFecha().getMonth())) return false;
             }
 
-            // 1. Filtro de fecha "Desde"
-            if (desde != null && g.getFecha().isBefore(desde)) {
-                return false;
-            }
-            
-            // 2. Filtro de fecha "Hasta"
-            if (hasta != null && g.getFecha().isAfter(hasta)) {
-                return false;
-            }
-            
-            // 3. Filtro de Categoría
-            if (catSeleccionada != null && !catSeleccionada.equals("Todas")) {
-                if (!g.getCategoria().toString().equals(catSeleccionada)) {
-                    return false;
-                }
+            // D. Filtro Lista Categorías (Si la lista no está vacía)
+            if (!categoriasSeleccionadas.isEmpty()) {
+                if (!categoriasSeleccionadas.contains(g.getCategoria().getId())) return false;
             }
             
             return true;
@@ -144,17 +162,36 @@ public class GastosViewController implements IObservador {
         tablaGastos.getItems().setAll(filtrados);
     }
 
+    private void actualizarTextoBoton(MenuButton btn, String titulo, int seleccionados) {
+        if (seleccionados == 0) btn.setText(titulo + " (Todos)");
+        else btn.setText(titulo + " (" + seleccionados + ")");
+    }
+
     @FXML
     private void handleLimpiarFiltros() {
         dpDesde.setValue(null);
         dpHasta.setValue(null);
-        cbCategoria.setValue("Todas");
-        refrescarTabla(); // Esto vuelve a cargar todos los gastos
+        
+        listaChecksMeses.forEach(cb -> cb.setSelected(false));
+        mbMeses.setText("Meses (Todos)");
+        
+        listaChecksCategorias.forEach(cb -> cb.setSelected(false));
+        mbCategorias.setText("Categorías (Todas)");
+        
+        refrescarTabla();
     }
+
+    private void refrescarTabla() {
+        ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+        // Por defecto mostramos TODOS los personales
+        List<Gasto> personales = ctrl.getGastosPorCondicion(g -> ctrl.esGastoPersonal(g));
+        tablaGastos.getItems().setAll(personales);
+    }
+
+    // --- Acciones CRUD ---
 
     @FXML
     private void handleNuevoGasto() {
-        // Mucho más limpio y sin errores de visibilidad
         Configuracion.getInstancia().getSceneManager().showNuevoGasto();
     }
 
@@ -163,14 +200,10 @@ public class GastosViewController implements IObservador {
         Gasto seleccionado = tablaGastos.getSelectionModel().getSelectedItem();
         if (seleccionado != null) {
             ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
-            
-            // Comprobamos antes de abrir la ventana de edición
             if (!ctrl.esGastoPersonal(seleccionado)) {
-                UIUtils.mostrarAlerta(AlertType.WARNING, "Acción no permitida", null, 
-                    "Los gastos de cuentas compartidas no pueden editarse desde aquí.");
+                UIUtils.mostrarAlerta(AlertType.WARNING, "Acción no permitida", null, "Los gastos de cuentas compartidas no se pueden editar aquí.");
                 return;
             }
-            
             Configuracion.getInstancia().getSceneManager().showEditarGasto(seleccionado);
         }
     }
@@ -180,62 +213,78 @@ public class GastosViewController implements IObservador {
         Gasto seleccionado = tablaGastos.getSelectionModel().getSelectedItem();
         if (seleccionado != null) {
             ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
-
-            // Verificamos si es un gasto compartido
+            
             if (!ctrl.esGastoPersonal(seleccionado)) {
-                UIUtils.mostrarAlerta(AlertType.WARNING, "Acción no permitida", null, 
-                    "No se pueden eliminar gastos de cuentas compartidas.");
+                UIUtils.mostrarAlerta(AlertType.WARNING, "Acción no permitida", null, "No se pueden eliminar gastos de cuentas compartidas desde esta vista.");
                 return;
             }
-
-            // Si es personal, procedemos con la confirmación habitual
+            
             Alert confirm = new Alert(AlertType.CONFIRMATION);
             confirm.setTitle("Confirmar Borrado");
             confirm.setHeaderText(null);
-            confirm.setContentText("¿Borrar gasto de " + seleccionado.getImporte() + "€?");
-            confirm.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
-
+            confirm.setContentText("¿Estás seguro de borrar este gasto?");
+            
             Optional<ButtonType> result = confirm.showAndWait();
-            if (result.isPresent() && result.get() == ButtonType.YES) {
+            if (result.isPresent() && result.get() == ButtonType.OK) {
                 ctrl.eliminarGasto(seleccionado);
             }
         }
     }
+
+    // --- Importación (HU 5.1) ---
+
     @FXML
     private void handleImportarGastos() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Importar Gastos");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV", "*.csv"));
-        File file = fileChooser.showOpenDialog(tablaGastos.getScene().getWindow());
+         FileChooser fileChooser = new FileChooser();
+         fileChooser.setTitle("Importar Gastos");
+         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivos CSV", "*.csv"));
+         
+         File file = fileChooser.showOpenDialog(tablaGastos.getScene().getWindow());
 
-        if (file != null) {
-            ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
-            
-            try {
-                int numIgnorados = ctrl.importarGastos(file.getAbsolutePath());
-                
-                if (numIgnorados > 0) {
-                    // Mensaje actualizado
-                    UIUtils.mostrarAlerta(AlertType.WARNING, 
-                        "Importación con Observaciones", 
-                        "Proceso finalizado", 
-                        "Se han procesado los gastos válidos.\n\nSe ignoraron " + numIgnorados + " registros por motivos de validación:\n"
-                        + "- Ya existían previamente.\n"
-                        + "- La cuenta compartida no existe.\n"
-                        + "- El pagador no pertenece a la cuenta.");
-                } else {
-                    UIUtils.mostrarAlerta(AlertType.INFORMATION, 
-                        "Importación Exitosa", 
-                        "Correcto", 
-                        "Todos los gastos han sido importados correctamente.");
-                }
-                
-            } catch (ImportacionException e) {
-                UIUtils.mostrarAlerta(AlertType.ERROR, "Error", "Fallo en importación", e.getMessage());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+         if (file != null) {
+             ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+             try {
+                 // Llamamos al método que devuelve el número de ignorados
+                 int numIgnorados = ctrl.importarGastos(file.getAbsolutePath());
+                 
+                 if (numIgnorados > 0) {
+                     UIUtils.mostrarAlerta(AlertType.WARNING, 
+                         "Importación con Observaciones", 
+                         "Proceso finalizado", 
+                         "Se han cargado los gastos válidos.\nSe ignoraron " + numIgnorados + " registros (duplicados, cuenta inexistente o usuario inválido).");
+                 } else {
+                     UIUtils.mostrarAlerta(AlertType.INFORMATION, 
+                         "Importación Exitosa", 
+                         "Éxito", 
+                         "Todos los gastos del fichero han sido importados correctamente.");
+                 }
+             } catch (ImportacionException e) {
+                 UIUtils.mostrarAlerta(AlertType.ERROR, "Error de Importación", "Fallo al leer fichero", e.getMessage());
+             } catch (Exception e) {
+                 e.printStackTrace();
+                 UIUtils.mostrarAlerta(AlertType.ERROR, "Error del Sistema", "Error inesperado", e.getMessage());
+             }
+         }
     }
-    
+
+    // --- Patrón Observador ---
+
+    @Override
+    public void actualizar(EventoSistema evento, Object datos) {
+        // Ejecutar en el hilo de JavaFX para evitar excepciones gráficas
+        Platform.runLater(() -> {
+            
+            // Si cambian los gastos, refrescamos la tabla
+            if (evento == EventoSistema.NUEVO_GASTO || 
+                evento == EventoSistema.GASTO_MODIFICADO || 
+                evento == EventoSistema.GASTO_ELIMINADO) {
+                refrescarTabla();
+            }
+
+            // Si hay nuevas categorías (ej: tras importar), actualizamos el filtro
+            if (evento == EventoSistema.NUEVA_CATEGORIA) {
+                actualizarFiltroCategorias();
+            }
+        });
+    }
 }
