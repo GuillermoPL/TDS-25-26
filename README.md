@@ -118,13 +118,13 @@ src/main/java/umu/tds
 
 Toda la documentación técnica y de gestión del proyecto se encuentra disponible en el directorio [`/docs`](./docs):
 
-### 🏗️ [Arquitectura y Decisiones de Diseño](./docs/ARQUITECTURA_Y_DECISIONES_DE_DISEÑO.pdf)
+### 🏗️ [Arquitectura y Decisiones de Diseño](./docs/ARQUITECTURA_Y_DECISIONES_DE_DISEÑO.md)
 Documento que justifica las decisiones de ingeniería del software:
 * **Arquitectura MVC:** Separación de responsabilidades entre Modelo, Vista (JavaFX/FXML) y Controlador (`ControladorAppGastos`).
 * **Decisiones Clave:** Centralización de instancias mediante `Configuracion` (Singleton), desacoplamiento de la persistencia con Adapter (JSON/Jackson) y modelo de delegación de eventos (Observer).
 * **Integridad:** Estrategias para evitar duplicados en la importación.
 
-### 🧩 [Patrones de Diseño](./docs/PATRONES_DE_DISEÑO.pdf)
+### 🧩 [Patrones de Diseño](./docs/PATRONES_DE_DISEÑO.md)
 Análisis exhaustivo de los patrones GoF y principios GRASP aplicados:
 * **Creacionales:** Uso de **Singleton** (Sesión, Factorías) y **Factory Method** para la creación dinámica de estrategias e importadores.
 * **Estructurales:** Patrón **Adapter** para la persistencia e importación de ficheros.
