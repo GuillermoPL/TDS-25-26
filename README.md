@@ -113,3 +113,36 @@ src/main/java/umu/tds
 ├── modelo        # Entidades, Estrategias, Factorías y Reglas de Negocio
 └── vista         # Controladores de JavaFX (FXML) e interfaz IObservador
 ```
+
+## 📚 Documentación Adicional
+
+Toda la documentación técnica y de gestión del proyecto se encuentra disponible en el directorio [`/docs`](./docs):
+
+### 🏗️ [Arquitectura y Decisiones de Diseño](./docs/ARQUITECTURA_Y_DECISIONES_DE_DISEÑO.pdf)
+Documento que justifica las decisiones de ingeniería del software:
+* **Arquitectura MVC:** Separación de responsabilidades entre Modelo, Vista (JavaFX/FXML) y Controlador (`ControladorAppGastos`).
+* **Decisiones Clave:** Centralización de instancias mediante `Configuracion` (Singleton), desacoplamiento de la persistencia con Adapter (JSON/Jackson) y modelo de delegación de eventos (Observer).
+* **Integridad:** Estrategias para evitar duplicados en la importación.
+
+### 🧩 [Patrones de Diseño](./docs/PATRONES_DE_DISEÑO.pdf)
+Análisis exhaustivo de los patrones GoF y principios GRASP aplicados:
+* **Creacionales:** Uso de **Singleton** (Sesión, Factorías) y **Factory Method** para la creación dinámica de estrategias e importadores.
+* **Estructurales:** Patrón **Adapter** para la persistencia e importación de ficheros.
+* **Comportamiento:** **Observer** para la sincronización de vistas y **Strategy** para la lógica de reparto y alertas.
+* **Principios GRASP:** Aplicación de Experto, Creador y Controlador.
+
+### 📋 [Historias de Usuario (TDS)](./docs/TDS_HISTORIAS_DE_USUARIO.pdf)
+Especificación funcional detallada dividida en 5 Épicas:
+1.  **Gestión de Gastos:** CRUD completo y validaciones.
+2.  **Visualización:** Listados, gráficos y filtrado avanzado.
+3.  **Sistema de Alertas:** Configuración de límites y notificaciones.
+4.  **Cuentas Compartidas:** Gestión de grupos y repartos (Equitativo/Porcentual).
+5.  **Importación:** Carga de datos externos.
+
+### 📕 [Manual de Usuario](./docs/MANUAL_USUARIO.pdf)
+Guía visual para el despliegue y uso de la aplicación:
+* Instrucciones de instalación y ejecución.
+* Recorrido por la interfaz gráfica.
+* Guía de uso del modo consola (CLI).
+
+
