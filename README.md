@@ -131,7 +131,7 @@ Análisis exhaustivo de los patrones GoF y principios GRASP aplicados:
 * **Comportamiento:** **Observer** para la sincronización de vistas y **Strategy** para la lógica de reparto y alertas.
 * **Principios GRASP:** Aplicación de Experto, Creador y Controlador.
 
-### 📋 [Historias de Usuario (TDS)](./docs/TDS_HISTORIAS_DE_USUARIO.pdf)
+### 📋 [Historias de Usuario (TDS)](./docs/HISTORIAS_DE_USUARIO.md)
 Especificación funcional detallada dividida en 5 Épicas:
 1.  **Gestión de Gastos:** CRUD completo y validaciones.
 2.  **Visualización:** Listados, gráficos y filtrado avanzado.
