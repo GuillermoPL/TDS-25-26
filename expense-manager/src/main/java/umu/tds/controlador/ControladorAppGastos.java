@@ -372,4 +372,10 @@ public class ControladorAppGastos {
 	public boolean isImporteValido(double importe) {
 	    return importe > 0;
 	}
+	
+	public boolean categoriaExists(String nombreCategoria) {
+	    // Obtenemos la lista de nombres de categorías y comprobamos si contiene el nombre
+	    List<String> categoriasDisponibles = getNombreCategorias();
+	    return categoriasDisponibles.contains(nombreCategoria);
+	}
 }
