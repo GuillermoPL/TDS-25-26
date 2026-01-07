@@ -2,6 +2,7 @@ package umu.tds;
 
 import java.util.Scanner;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import umu.tds.controlador.ControladorAppGastos;
 import umu.tds.controlador.ControladorSesion;
@@ -10,9 +11,9 @@ import umu.tds.modelo.Usuario;
 
 public class MainCLI {
     public static void main(String[] args) {
-    	 Configuracion config = new ConfiguracionImpl();
-         Configuracion.setInstancia(config);
-         ControladorAppGastos ctrl = config.getControladorAppGastos();
+        Configuracion config = new ConfiguracionImpl();
+        Configuracion.setInstancia(config);
+        ControladorAppGastos ctrl = config.getControladorAppGastos();
 
         Usuario usuarioCli = new Usuario("yo");
         ControladorSesion.getInstancia().setUsuarioActual(usuarioCli);
@@ -48,12 +49,14 @@ public class MainCLI {
                     }
                     break;
 
-                case "2":
+                case "2": //REGISTRAR GASTO
                     try {
                         System.out.print("Importe: ");
                         double imp = Double.parseDouble(scanner.nextLine());
                         System.out.print("Categoría: ");
                         String cat = scanner.nextLine();
+                        System.out.print("Fecha (AAAA-MM-DD, ejemplo 2024-12-31): "); // Solicitud de fecha
+                        LocalDate fecha = LocalDate.parse(scanner.nextLine()); 
                         
                         // VALIDACIONES
                         if (!ctrl.isImporteValido(imp)) {
@@ -61,11 +64,13 @@ public class MainCLI {
                         } else if (!ctrl.categoriaExists(cat)) {
                             System.out.println("Error: La categoría '" + cat + "' no existe.");
                         } else {
-                            ctrl.registrarGasto(imp, LocalDate.now(), cat);
+                            ctrl.registrarGasto(imp, fecha, cat); // Registro con la fecha introducida
                             System.out.println("¡Gasto registrado correctamente!");
                         }
                     } catch (NumberFormatException e) {
                         System.out.println("Error: El importe debe ser un número.");
+                    } catch (DateTimeParseException e) {
+                        System.out.println("Error: El formato de fecha no es válido (use AAAA-MM-DD)."); // Validación de formato de fecha
                     }
                     break;
 
@@ -82,6 +87,9 @@ public class MainCLI {
                             
                             System.out.print("Nueva categoría (actual: " + g.getCategoria().getId() + "): ");
                             String nuevaCat = scanner.nextLine();
+                            
+                            System.out.print("Nueva fecha (actual: " + g.getFecha() + ", use AAAA-MM-DD): "); // Solicitud de nueva fecha
+                            LocalDate nuevaFecha = LocalDate.parse(scanner.nextLine());
 
                             // VALIDACIONES
                             if (!ctrl.isImporteValido(nuevoImp)) {
@@ -89,13 +97,16 @@ public class MainCLI {
                             } else if (!ctrl.categoriaExists(nuevaCat)) {
                                 System.out.println("Error: La categoría '" + nuevaCat + "' no existe.");
                             } else {
-                                g.setImporte(nuevoImp);
-                                g.setCategoria(new umu.tds.modelo.Categoria(nuevaCat));
-                                ctrl.modificarGasto(g);
+                                g.setImporte(nuevoImp); // Actualización de importe
+                                g.setFecha(nuevaFecha); // Actualización de fecha
+                                g.setCategoria(new umu.tds.modelo.Categoria(nuevaCat)); // Actualización de categoría
+                                ctrl.modificarGasto(g); // Persistencia del cambio
                                 System.out.println("Gasto modificado con éxito.");
                             }
                         } catch (NumberFormatException e) {
                             System.out.println("Error: Importe no válido.");
+                        } catch (DateTimeParseException e) {
+                            System.out.println("Error: El formato de fecha no es válido (use AAAA-MM-DD).");
                         }
                     } else {
                         System.out.println("ID no encontrado.");
@@ -127,5 +138,4 @@ public class MainCLI {
         System.out.println("Fin de la ejecución CLI.");
         scanner.close();
     }
-} 
- 
+}
