@@ -20,7 +20,6 @@ import umu.tds.adapters.repository.RepositorioCuentas;
 import umu.tds.adapters.repository.exceptions.ElementoExistenteException;
 import umu.tds.adapters.repository.exceptions.ErrorPersistenciaException;
 import umu.tds.modelo.CuentaCompartida;
-import umu.tds.modelo.Gasto;
 import umu.tds.modelo.Usuario;
 
 public class RepositorioCuentasJSON implements RepositorioCuentas{
