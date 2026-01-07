@@ -2,17 +2,24 @@ package umu.tds.controlador;
 
 import umu.tds.modelo.Usuario;
 
+/**
+ * Gestiona la sesión del usuario actual.
+ * Implementa el patrón Singleton (Eager Initialization para Thread-Safety).
+ */
 public class ControladorSesion {
-    private static ControladorSesion unicaInstancia;
+    
+    // 1. Instancia estática final (Eager Loading)
+    // Se crea al cargar la clase, garantizando que sea única y segura (Thread-Safe).
+    private static final ControladorSesion INSTANCE = new ControladorSesion();
+    
     private Usuario usuarioActual;
 
-    private ControladorSesion() {
+    // 2. Constructor privado
+    private ControladorSesion() {}
 
-    }
-
+    // 3. Acceso global
     public static ControladorSesion getInstancia() {
-        if (unicaInstancia == null) unicaInstancia = new ControladorSesion();
-        return unicaInstancia;
+        return INSTANCE;
     }
 
     public Usuario getUsuarioActual() {
@@ -21,6 +28,11 @@ public class ControladorSesion {
 
     public void setUsuarioActual(Usuario usuario) {
         this.usuarioActual = usuario;
+    }
+    
+    // Método semántico para el Logout
+    public void cerrarSesion() {
+        this.usuarioActual = null;
     }
 
     public boolean isSesionIniciada() {

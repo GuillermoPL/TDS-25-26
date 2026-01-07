@@ -3,43 +3,64 @@ package umu.tds.modelo;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Factoría que centraliza la creación de estrategias (Reparto y Alertas).
+ * Implementa el patrón Singleton y Simple Factory.
+ */
 public class FactoriaEstrategia {
-	// 1. Instancia única privada
-    private static FactoriaEstrategia unicaInstancia;
+    
+    // 1. Singleton: Inicialización Eager (Thread-Safe y más limpia)
+    private static final FactoriaEstrategia INSTANCE = new FactoriaEstrategia();
 
-    // 2. Constructor privado para evitar instanciación externa
+    // 2. Constructor privado
     private FactoriaEstrategia() {}
 
-    // 3. Método estático para obtener la instancia
+    // 3. Acceso global
     public static FactoriaEstrategia getInstancia() {
-        if (unicaInstancia == null) {
-            unicaInstancia = new FactoriaEstrategia();
-        }
-        return unicaInstancia;
+        return INSTANCE;
     }
 
-    // Método para crear la estrategia (Factory Method)
+    /**
+     * Crea una estrategia de reparto según el tipo solicitado.
+     * @param tipo "EQUITATIVO" o "PORCENTUAL".
+     * @param porcentajes Mapa de porcentajes (necesario solo para PORCENTUAL).
+     * @param usuarios Set de usuarios (necesario solo para EQUITATIVO).
+     * @return La estrategia configurada.
+     */
     public EstrategiaReparto crearEstrategia(String tipo, Map<Usuario, Double> porcentajes, Set<Usuario> usuarios) {
-        if (tipo.equalsIgnoreCase("PORCENTUAL")) {
-            return new RepartoPorcentual(porcentajes);
-        } 
-        
-        if (tipo.equalsIgnoreCase("EQUITATIVO")) {
-            // Usamos el Set de usuarios que ya tenemos en el controlador
-            return new RepartoEquitativo(usuarios);
+        // Contrato: Evitar NullPointerException
+        if (tipo == null) {
+            throw new IllegalArgumentException("El tipo de estrategia no puede ser nulo.");
         }
 
-        throw new IllegalArgumentException("Tipo de estrategia no reconocido: " + tipo);
+        // Usamos switch para mayor claridad (Clean Code)
+        switch (tipo.toUpperCase().trim()) {
+            case "PORCENTUAL":
+                return new RepartoPorcentual(porcentajes);
+            case "EQUITATIVO":
+                return new RepartoEquitativo(usuarios);
+            default:
+                throw new IllegalArgumentException("Tipo de estrategia de reparto no reconocido: " + tipo);
+        }
     }
     
+    /**
+     * Crea una estrategia de alerta temporal.
+     * @param tipo "SEMANAL" o "MENSUAL".
+     * @return La estrategia de alerta correspondiente.
+     */
     public IEstrategiaAlerta crearEstrategiaAlerta(String tipo) {
-        if (tipo.equalsIgnoreCase("SEMANAL")) {
-            return new EstrategiaAlertaSemanal();
+        if (tipo == null) {
+            throw new IllegalArgumentException("El periodo de alerta no puede ser nulo.");
         }
-        if (tipo.equalsIgnoreCase("MENSUAL")) {
-            return new EstrategiaAlertaMensual();
+
+        switch (tipo.toUpperCase().trim()) {
+            case "SEMANAL":
+                return new EstrategiaAlertaSemanal();
+            case "MENSUAL":
+                return new EstrategiaAlertaMensual();
+            default:
+                throw new IllegalArgumentException("Periodo de alerta no reconocido: " + tipo);
         }
-        throw new IllegalArgumentException("Periodo de alerta no reconocido: " + tipo);
     }
-    
 }
