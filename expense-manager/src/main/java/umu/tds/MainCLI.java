@@ -81,6 +81,11 @@ public class MainCLI {
 
                     if (!paraEditar.isEmpty()) {
                         Gasto g = paraEditar.get(0);
+                        
+                        if (!ctrl.esGastoPersonal(g)) {
+                            System.out.println("Error: No se pueden editar gastos compartidos (ID: " + g.getId() + ")");
+                            break;
+                        }
                         try {
                             System.out.print("Nuevo importe (actual: " + g.getImporte() + "): ");
                             double nuevoImp = Double.parseDouble(scanner.nextLine());
@@ -118,7 +123,10 @@ public class MainCLI {
                     String idBorrar = scanner.nextLine();
                     List<Gasto> encontrados = ctrl.getGastosPorCondicion(g -> g.getId().equals(idBorrar));
                     
-                    if (!encontrados.isEmpty()) {
+                    if (!encontrados.isEmpty() && !ctrl.esGastoPersonal(encontrados.get(0))) {
+                        System.out.println("Error: No se pueden borrar gastos compartidos (ID: " + encontrados.get(0).getId() + ")");
+                    }
+                    else if (!encontrados.isEmpty()) {
                         ctrl.eliminarGasto(encontrados.get(0));
                         System.out.println("Gasto eliminado.");
                     } else {
