@@ -294,23 +294,33 @@ public class ControladorAppGastos {
 
 	}
 	
-	public void eliminarGasto(Gasto gasto) {
+	public boolean eliminarGasto(Gasto gasto) {
 	    try {
+	        if (!esGastoPersonal(gasto)) {
+	            return false;
+	        }
 	        repoGastos.removeGasto(gasto); 
 	        this.notificarCambio(EventoSistema.GASTO_ELIMINADO, gasto); 
+	        return true;
 	    } catch (ErrorPersistenciaException e) {
 	        e.printStackTrace();
+	        return false;
 	    }
 	}
+	
 
-	public void modificarGasto(Gasto gasto) {
+	public boolean modificarGasto(Gasto gasto) {
 	    try {
-	        // El objeto ya viene modificado de la vista (gracias al setGasto del controller)
+	        if (!esGastoPersonal(gasto)) {
+	            return false;
+	        }
 	        repoGastos.updateGasto(gasto); 
 	        this.notificarCambio(EventoSistema.GASTO_MODIFICADO, gasto);
 	        verificarAlertas();
+	        return true;
 	    } catch (ErrorPersistenciaException e) {
 	        e.printStackTrace();
+	        return false;
 	    }
 	}
 	
@@ -377,5 +387,11 @@ public class ControladorAppGastos {
 	    // Obtenemos la lista de nombres de categorías y comprobamos si contiene el nombre
 	    List<String> categoriasDisponibles = getNombreCategorias();
 	    return categoriasDisponibles.contains(nombreCategoria);
+	}
+	
+	public boolean esGastoPersonal(Gasto g) {
+	    if (g == null || g.getId() == null) return false;
+	    // Un gasto es personal si su ID NO empieza por "G-COMP"
+	    return !g.getId().startsWith("G-COMP");
 	}
 }

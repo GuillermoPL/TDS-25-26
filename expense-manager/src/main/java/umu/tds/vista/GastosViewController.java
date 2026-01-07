@@ -159,7 +159,15 @@ public class GastosViewController implements IObservador {
     private void handleEditarGasto() {
         Gasto seleccionado = tablaGastos.getSelectionModel().getSelectedItem();
         if (seleccionado != null) {
-            // El SceneManager se encarga de todo lo feo del FXMLLoader
+            ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+            
+            // Comprobamos antes de abrir la ventana de edición
+            if (!ctrl.esGastoPersonal(seleccionado)) {
+                UIUtils.mostrarAlerta(AlertType.WARNING, "Acción no permitida", null, 
+                    "Los gastos de cuentas compartidas no pueden editarse desde aquí.");
+                return;
+            }
+            
             Configuracion.getInstancia().getSceneManager().showEditarGasto(seleccionado);
         }
     }
@@ -168,18 +176,25 @@ public class GastosViewController implements IObservador {
     private void handleBorrarGasto() {
         Gasto seleccionado = tablaGastos.getSelectionModel().getSelectedItem();
         if (seleccionado != null) {
-            // Creación directa de la alerta nativa
+            ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
+
+            // Verificamos si es un gasto compartido
+            if (!ctrl.esGastoPersonal(seleccionado)) {
+                UIUtils.mostrarAlerta(AlertType.WARNING, "Acción no permitida", null, 
+                    "No se pueden eliminar gastos de cuentas compartidas.");
+                return;
+            }
+
+            // Si es personal, procedemos con la confirmación habitual
             Alert confirm = new Alert(AlertType.CONFIRMATION);
             confirm.setTitle("Confirmar Borrado");
             confirm.setHeaderText(null);
             confirm.setContentText("¿Borrar gasto de " + seleccionado.getImporte() + "€?");
-            
-            // Configuración de botones nativos
             confirm.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
 
             Optional<ButtonType> result = confirm.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.YES) {
-                Configuracion.getInstancia().getControladorAppGastos().eliminarGasto(seleccionado);
+                ctrl.eliminarGasto(seleccionado);
             }
         }
     }
