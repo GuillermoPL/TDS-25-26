@@ -107,7 +107,7 @@ public class ControladorAppGastos {
     // --- INICIALIZACIÓN ---
     
     public void inicializarDatos() throws ErrorPersistenciaException {
-        String[] predefinidas = {"Alimentación", "Transporte", "Entretenimiento", "Vivienda"};
+        String[] predefinidas = {"Alimentación", "Transporte", "Entretenimiento"};
         
         for (String nombre : predefinidas) {
             try {
