@@ -35,19 +35,20 @@ public class MainCLI {
             String opcion = scanner.nextLine();
 
             switch (opcion) {
-                case "1":
-                    List<Gasto> gastos = ctrl.getGastosPorCondicion(g -> true);
-                    if (gastos.isEmpty()) {
-                        System.out.println("No hay gastos registrados.");
-                    } else {
-                        System.out.println("Listado de gastos:");
-                        for (Gasto g : gastos) {
-                            System.out.println(" > [" + g.getId() + "] " 
-                                + g.getImporte() + "€ en " 
-                                + g.getCategoria().getId() + " (" + g.getFecha() + ")");
-                        }
+            case "1":
+                List<Gasto> gastos = ctrl.getGastosPersonales(); 
+                
+                if (gastos.isEmpty()) {
+                    System.out.println("No hay gastos personales registrados.");
+                } else {
+                    System.out.println("Listado de tus gastos personales:");
+                    for (Gasto g : gastos) {
+                        System.out.println(" > [" + g.getId() + "] " 
+                            + g.getImporte() + "€ en " 
+                            + g.getCategoria().getId() + " (" + g.getFecha() + ")");
                     }
-                    break;
+                }
+                break;
 
                 case "2": //REGISTRAR GASTO
                     try {

@@ -127,6 +127,11 @@ public class ControladorAppGastos {
 				.collect(Collectors.toList());
 	}
 	
+	public List<Gasto> getGastosPersonales() {
+	    // Reutilizamos la lógica de esGastoPersonal que ya comprueba el prefijo "G-COMP"
+	    return getGastosPorCondicion(g -> esGastoPersonal(g));
+	}
+	
 	// Añadimos las excepciones a la firma del método
 	public void crearCuentaCompartida(String nombre, String tipoEstrategia, Map<String, Double> datosVista) 
 	        throws ElementoExistenteException, ErrorPersistenciaException {
