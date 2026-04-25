@@ -65,4 +65,15 @@ public interface RepositorioCuentas {
      */
     void addUsuario(Usuario u) throws ElementoExistenteException, ErrorPersistenciaException;
 
-}
+    /**
+     * Recupera los logins de todos los usuarios registrados.
+     * <p>
+     * Se ofrece como método propio del repositorio (en lugar de que el cliente
+     * itere {@link #getUsuarios()}) para respetar el patrón Experto en Información:
+     * la transformación la realiza quien posee la colección.
+     *
+     * @return Lista de logins (nunca null, puede estar vacía).
+     */
+    List<String> getLoginsUsuarios();
+
+}   

@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -209,5 +210,13 @@ public class RepositorioGastosJSON implements RepositorioGastos {
             log.error("Error escribiendo en disco", e);
             throw e;
         }
+    }
+
+    @Override
+    public List<String> getNombreCategorias() {
+        return getCategorias().stream()
+                .map(Categoria::getId)
+                .sorted()
+                .collect(Collectors.toList());
     }
 }

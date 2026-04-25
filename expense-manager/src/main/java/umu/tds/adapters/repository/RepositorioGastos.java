@@ -66,4 +66,16 @@ public interface RepositorioGastos {
 	 */
 	void addCategoria(Categoria categoria) throws ElementoExistenteException, ErrorPersistenciaException;
 
+	/**
+     * Recupera los nombres (identificadores) de todas las categorías existentes,
+     * ordenados alfabéticamente.
+     * <p>
+     * Se ofrece como método propio del repositorio para respetar el patrón
+     * Experto en Información: la transformación la realiza quien posee la
+     * colección de categorías.
+     *
+     * @return Lista de nombres de categoría ordenada (nunca null, puede estar vacía).
+     */
+    List<String> getNombreCategorias();
+
 }

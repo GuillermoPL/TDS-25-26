@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -186,5 +187,12 @@ public class RepositorioCuentasJSON implements RepositorioCuentas {
 			log.error("Error persistiendo en fichero", e);
 			throw e;
 		}
+	}
+
+	@Override
+	public List<String> getLoginsUsuarios() {
+	    return getUsuarios().stream()
+	            .map(Usuario::getLogin)
+	            .collect(Collectors.toList());
 	}
 }

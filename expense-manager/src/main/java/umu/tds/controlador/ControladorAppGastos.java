@@ -58,9 +58,7 @@ public class ControladorAppGastos {
     }
     
     public List<String> getLoginsUsuarios() {
-        return repoCuentas.getUsuarios().stream()
-                .map(Usuario::getLogin)
-                .collect(Collectors.toList());
+        return repoCuentas.getLoginsUsuarios();
     }
 
     public void crearCuentaCompartida(String nombre, String tipoEstrategia, Map<String, Double> datosVista) 
@@ -292,10 +290,7 @@ public class ControladorAppGastos {
     }
     
     public List<String> getNombreCategorias() {
-        return repoGastos.getCategorias().stream()
-                .map(Categoria::getId)
-                .sorted()
-                .collect(Collectors.toList());
+        return repoGastos.getNombreCategorias();
     }
     
     public boolean categoriaExists(String nombreCategoria) {
