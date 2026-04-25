@@ -1,4 +1,4 @@
-# 💰 TDS-25-26: ExpenseManager
+# 💰 TDS-25-26: ExpenseManager V2 (MAYO)
 
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Build](https://img.shields.io/badge/Build-Maven-blue)
