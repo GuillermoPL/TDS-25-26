@@ -28,4 +28,13 @@ public interface IEstrategiaAlerta {
      * @return true si se supera el límite, false en caso contrario.
      */
     boolean verificar(List<Gasto> gastos, double limite);
+
+
+    /**
+     * Devuelve una descripción legible del periodo que evalúa esta estrategia
+     * (por ejemplo, "Semanal" o "Mensual"). Se utiliza en mensajes de UI y logs.
+     *
+     * @return Texto descriptivo del periodo.
+     */
+    String getDescripcionPeriodo();
 }

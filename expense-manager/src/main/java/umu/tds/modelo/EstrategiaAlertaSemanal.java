@@ -20,9 +20,9 @@ public class EstrategiaAlertaSemanal implements IEstrategiaAlerta {
         
         return gastoAcumulado > limite;
     }
-    
+
     @Override
-    public String toString() {
+    public String getDescripcionPeriodo() {
         return "Semanal";
     }
 }

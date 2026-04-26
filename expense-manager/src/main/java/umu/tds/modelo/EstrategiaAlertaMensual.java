@@ -28,4 +28,9 @@ public class EstrategiaAlertaMensual implements IEstrategiaAlerta {
         
         return gastoAcumulado > limite;
     }
+
+    @Override
+    public String getDescripcionPeriodo() {
+        return "Mensual";
+    }
 }

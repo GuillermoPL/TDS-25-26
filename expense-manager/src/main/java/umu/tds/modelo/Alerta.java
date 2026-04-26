@@ -86,10 +86,10 @@ public class Alerta {
         return superada;
     }
 	
-    @Override
-    public String toString() {
-        String periodo = (estrategia instanceof EstrategiaAlertaSemanal) ? "Semanal" : "Mensual";
-        String textoCat = (categoria == null) ? "Todas" : categoria.toString();
-        return String.format("Límite: %.2f€ | Periodo: %s | Cat: %s", limite, periodo, textoCat);
-    }
+	@Override
+	public String toString() {
+	    String periodo = (estrategia == null) ? "Sin estrategia" : estrategia.getDescripcionPeriodo();
+	    String textoCat = (categoria == null) ? "Todas" : categoria.toString();
+	    return String.format("Límite: %.2f€ | Periodo: %s | Cat: %s", limite, periodo, textoCat);
+	}
 }
