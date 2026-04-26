@@ -126,7 +126,7 @@ public class ControladorAppGastos {
             Categoria cat = repoGastos.getCategoria(nombreCat); // Asumimos que la vista envía una cat válida
             
             // Usamos UUID para evitar colisiones de ID
-            String id = PREFIJO_PERSONAL + UUID.randomUUID().toString();
+            String id = PREFIJO_PERSONAL + UUID.randomUUID().toString().substring(0, 8);
             Gasto nuevo = new Gasto(id, importe, fecha, cat, pagador); 
 
             repoGastos.addGasto(nuevo);
@@ -147,7 +147,7 @@ public class ControladorAppGastos {
             Usuario pagador = repoCuentas.getUsuario(loginPagador);
             
             // ID único para compartido
-            String id = PREFIJO_COMPARTIDO + UUID.randomUUID().toString();
+            String id = PREFIJO_COMPARTIDO + UUID.randomUUID().toString().substring(0, 8);
             Categoria cat = repoGastos.getCategoria(nombreCat);
             
             Gasto nuevoGasto = new Gasto(id, importe, fecha, cat, pagador, cuenta.getNombre());
