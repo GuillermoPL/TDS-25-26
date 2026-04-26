@@ -428,6 +428,32 @@ public class ControladorAppGastos {
                 .collect(Collectors.toList());
     }
 
+
+    /**
+     * Calcula el importe total acumulado por cada categoría a partir de
+     * todos los gastos del sistema.
+     *
+     * @return mapa nombre de categoría → importe total. Nunca null.
+     */
+    public Map<String, Double> getTotalesPorCategoria() {
+        return repoGastos.getGastos().stream()
+                .filter(g -> g.getCategoria() != null)
+                .collect(Collectors.groupingBy(
+                        g -> g.getCategoria().getId(),
+                        Collectors.summingDouble(Gasto::getImporte)
+                ));
+    }
+    
+    /**
+     * Calcula el importe total acumulado de todos los gastos del sistema.
+     *
+     * @return suma de todos los importes.
+     */
+    public double getTotalGlobal() {
+        return repoGastos.getGastos().stream()
+                .mapToDouble(Gasto::getImporte)
+                .sum();
+    }
     // --- OBSERVADOR ---
     
     public void registrarObservador(IObservador obs) {

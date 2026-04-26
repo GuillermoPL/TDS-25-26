@@ -29,27 +29,17 @@ public class EstadisticasViewController implements IObservador {
 
     private void refrescarGrafico() {
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
-        List<Gasto> todosLosGastos = ctrl.getGastosPorCondicion(g -> true);
-
-        // --- LÓGICA DE STREAMS (Clave en TDS) ---
-        // Agrupamos los gastos por el nombre de su categoría y sumamos los importes
-        Map<String, Double> totalesPorCategoria = todosLosGastos.stream()
-                .collect(Collectors.groupingBy(
-                        g -> g.getCategoria().toString(), // Usamos el nombre de la categoría
-                        Collectors.summingDouble(Gasto::getImporte)
-                ));
-
-        // Calculamos el total general para el label
-        double totalGlobal = todosLosGastos.stream()
-                .mapToDouble(Gasto::getImporte)
-                .sum();
-
-        // Actualizamos la UI
+    
+        Map<String, Double> totalesPorCategoria = ctrl.getTotalesPorCategoria();
+        double totalGlobal = ctrl.getTotalGlobal();
+    
+        // Construimos las porciones con la etiqueta enriquecida
         graficoCategorias.getData().clear();
         totalesPorCategoria.forEach((nombre, total) -> {
-            graficoCategorias.getData().add(new PieChart.Data(nombre, total));
+            String etiqueta = String.format("%s — %.2f €", nombre, total);
+            graficoCategorias.getData().add(new PieChart.Data(etiqueta, total));
         });
-
+    
         lblTotal.setText(String.format("Total acumulado: %.2f €", totalGlobal));
     }
 
