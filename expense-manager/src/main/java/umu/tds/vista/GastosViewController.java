@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -121,43 +122,22 @@ public class GastosViewController implements IObservador {
         LocalDate desde = dpDesde.getValue();
         LocalDate hasta = dpHasta.getValue();
 
-        // 1. Obtener meses seleccionados
-        List<Month> mesesSeleccionados = new ArrayList<>();
-        for (CheckBox cb : listaChecksMeses) {
-            if (cb.isSelected()) mesesSeleccionados.add((Month) cb.getUserData());
-        }
-        actualizarTextoBoton(mbMeses, "Meses", mesesSeleccionados.size());
+        List<Month> mesesSeleccionados = listaChecksMeses.stream()
+                .filter(CheckBox::isSelected)
+                .map(cb -> (Month) cb.getUserData())
+                .collect(Collectors.toList());
 
-        // 2. Obtener categorías seleccionadas
-        List<String> categoriasSeleccionadas = new ArrayList<>();
-        for (CheckBox cb : listaChecksCategorias) {
-            if (cb.isSelected()) categoriasSeleccionadas.add((String) cb.getUserData());
-        }
+        List<String> categoriasSeleccionadas = listaChecksCategorias.stream()
+                .filter(CheckBox::isSelected)
+                .map(cb -> (String) cb.getUserData())
+                .collect(Collectors.toList());
+
+        actualizarTextoBoton(mbMeses, "Meses", mesesSeleccionados.size());
         actualizarTextoBoton(mbCategorias, "Categorías", categoriasSeleccionadas.size());
 
-        // 3. Aplicar predicado compuesto
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
-
-        List<Gasto> filtrados = ctrl.getGastosPorCondicion(g -> {
-            // A. SEGURIDAD: Solo mostrar gastos personales
-            if (!ctrl.esGastoPersonal(g)) return false;
-
-            // B. Filtro Rango Fechas
-            if (desde != null && g.getFecha().isBefore(desde)) return false;
-            if (hasta != null && g.getFecha().isAfter(hasta)) return false;
-
-            // C. Filtro Lista Meses (Si la lista no está vacía)
-            if (!mesesSeleccionados.isEmpty()) {
-                if (!mesesSeleccionados.contains(g.getFecha().getMonth())) return false;
-            }
-
-            // D. Filtro Lista Categorías (Si la lista no está vacía)
-            if (!categoriasSeleccionadas.isEmpty()) {
-                if (!categoriasSeleccionadas.contains(g.getCategoria().getId())) return false;
-            }
-            
-            return true;
-        });
+        List<Gasto> filtrados = ctrl.filtrarGastosPersonales(
+                desde, hasta, mesesSeleccionados, categoriasSeleccionadas);
 
         tablaGastos.getItems().setAll(filtrados);
     }
@@ -183,9 +163,7 @@ public class GastosViewController implements IObservador {
 
     private void refrescarTabla() {
         ControladorAppGastos ctrl = Configuracion.getInstancia().getControladorAppGastos();
-        // Por defecto mostramos TODOS los personales
-        List<Gasto> personales = ctrl.getGastosPorCondicion(g -> ctrl.esGastoPersonal(g));
-        tablaGastos.getItems().setAll(personales);
+        tablaGastos.getItems().setAll(ctrl.getGastosPersonales());
     }
 
     // --- Acciones CRUD ---

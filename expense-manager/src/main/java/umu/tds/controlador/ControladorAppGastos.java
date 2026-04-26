@@ -1,6 +1,7 @@
 package umu.tds.controlador;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -401,6 +402,30 @@ public class ControladorAppGastos {
         }
         
         return true;
+    }
+
+    /**
+     * Devuelve los gastos personales del usuario que cumplen los criterios
+     * de filtrado indicados. Cualquier criterio nulo o vacío se ignora
+     * (equivale a "no filtrar por ese campo").
+     *
+     * @param desde fecha mínima inclusive, o {@code null} para no acotar.
+     * @param hasta fecha máxima inclusive, o {@code null} para no acotar.
+     * @param meses meses a incluir; lista vacía o {@code null} = todos.
+     * @param categorias nombres de categoría a incluir; lista vacía o {@code null} = todas.
+     * @return lista de gastos personales que pasan todos los filtros.
+     */
+    public List<Gasto> filtrarGastosPersonales(LocalDate desde, LocalDate hasta,
+                                               List<Month> meses, List<String> categorias) {
+        return repoGastos.getGastos().stream()
+                .filter(this::esGastoPersonal)
+                .filter(g -> desde == null || !g.getFecha().isBefore(desde))
+                .filter(g -> hasta == null || !g.getFecha().isAfter(hasta))
+                .filter(g -> meses == null || meses.isEmpty()
+                              || meses.contains(g.getFecha().getMonth()))
+                .filter(g -> categorias == null || categorias.isEmpty()
+                              || categorias.contains(g.getCategoria().getId()))
+                .collect(Collectors.toList());
     }
 
     // --- OBSERVADOR ---
